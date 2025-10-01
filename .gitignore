@@ -1,0 +1,9 @@
+# WX miniprogram specific
+*.wxss.map
+*.json.map
+*.js.map
+/miniprogram_npm/
+/node_modules/
+/dist/
+.idea/
+.DS_Store

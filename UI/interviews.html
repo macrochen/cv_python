@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        body { background-color: #f8f9fa; }
+        .modal-backdrop { background-color: rgba(0, 0, 0, 0.5); }
+        #modal-content { max-height: 90vh; }
+        .swipe-container { position: relative; overflow: hidden; user-select: none; }
+        .swipe-actions { position: absolute; top: 0; right: 0; height: 100%; display: flex; align-items: center; }
+        .swipe-actions button { height: 100%; border: none; color: white; padding: 0 1.25rem; font-weight: 500; cursor: pointer; }
+        .swipe-actions .edit-btn { background-color: #f59e0b; }
+        .swipe-actions .delete-btn { background-color: #ef4444; }
+        .swipe-content { position: relative; background-color: white; transition: transform 0.3s ease-out; cursor: pointer; }
+    </style>
+</head>
+<body class="p-4 pb-20">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">机会列表</h1>
+        <button id="add-opportunity-btn" class="bg-blue-500 text-white w-10 h-10 rounded-full shadow-lg hover:bg-blue-600 transition flex items-center justify-center">
+            <i class="fa-solid fa-plus"></i>
+        </button>
+    </div>
+
+    <div id="opportunity-list" class="space-y-4"></div>
+
+    <!-- Add/Edit Opportunity Modal -->
+    <div id="add-opportunity-modal" class="fixed inset-0 z-50 items-center justify-center p-4 modal-backdrop hidden">
+        <div id="modal-content" class="bg-white rounded-lg shadow-xl w-full max-w-md mx-auto">
+            <div class="p-6 overflow-y-auto" style="max-height: 85vh;">
+                <h3 id="modal-title" class="text-lg font-medium leading-6 text-gray-900 mb-4"></h3>
+                <form id="opportunity-form" class="space-y-4 text-sm">
+                    <input type="hidden" id="editing-id">
+                    <div>
+                        <label for="company-name" class="block font-medium text-gray-700">公司名称*</label>
+                        <input type="text" id="company-name" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm" required>
+                    </div>
+                    <div>
+                        <label for="position-name" class="block font-medium text-gray-700">职位名称*</label>
+                        <input type="text" id="position-name" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm" required>
+                    </div>
+                    <div>
+                        <label for="position-jd" class="block font-medium text-gray-700">岗位描述 (JD)</label>
+                        <textarea id="position-jd" rows="5" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm" placeholder="请在此处粘贴岗位描述..."></textarea>
+                    </div>
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div>
+                            <label for="source" class="block font-medium text-gray-700">信息来源</label>
+                            <input type="text" id="source" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm">
+                        </div>
+                        <div>
+                            <label for="status" class="block font-medium text-gray-700">投递状态</label>
+                            <select id="status" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm">
+                                <option>待投递</option><option>已投递</option><option>笔试中</option><option>面试中</option><option>已发Offer</option><option>已结束</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="bg-gray-50 px-4 py-3 flex justify-end rounded-b-lg">
+                <button type="button" id="cancel-btn" class="inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">取消</button>
+                <button type="button" id="save-btn" class="ml-3 inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-sm font-medium text-white hover:bg-blue-700">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const opportunityList = document.getElementById('opportunity-list');
+        const modal = document.getElementById('add-opportunity-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const addBtn = document.getElementById('add-opportunity-btn');
+        const cancelBtn = document.getElementById('cancel-btn');
+        const saveBtn = document.getElementById('save-btn');
+        const form = document.getElementById('opportunity-form');
+        const editingIdInput = document.getElementById('editing-id');
+
+        let longPressTimer, pressStartTime;
+        let activeCard = null;
+        let opportunities = [];
+
+        const statusMap = {
+            '待投递': { color: 'purple', text: '待投递' }, '已投递': { color: 'yellow', text: '已投递' }, '笔试中': { color: 'indigo', text: '笔试中' },
+            '面试中': { color: 'blue', text: '面试中' }, '已发Offer': { color: 'green', text: 'Offer' }, '已结束': { color: 'gray', text: '已结束' },
+        };
+
+        function generateId() { return Date.now().toString(); }
+
+        function createCardHTML(opp) {
+            const statusInfo = statusMap[opp.status];
+            return `
+            <div class="swipe-container rounded-xl" data-id="${opp.id}">
+                <div class="swipe-actions">
+                    <button class="edit-btn">编辑</button>
+                    <button class="delete-btn">删除</button>
+                </div>
+                <div class="swipe-content p-4 rounded-xl shadow-sm border-l-4 border-${statusInfo.color}-500">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="font-bold text-gray-800">${opp.position}</p>
+                            <p class="text-sm text-gray-500">${opp.company}</p>
+                        </div>
+                        <span class="bg-${statusInfo.color}-100 text-${statusInfo.color}-800 text-xs font-medium px-2.5 py-0.5 rounded-full">${statusInfo.text}</span>
+                    </div>
+                    <div class="mt-4 flex justify-between items-center text-sm text-gray-600">
+                        ${opp.details || `<span><i class="fa-solid fa-clock mr-1"></i> ${new Date(parseInt(opp.id)).toLocaleDateString()}</span>`}
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        function renderList() { opportunityList.innerHTML = opportunities.map(createCardHTML).join(''); }
+        function showModal() { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+        function hideModal() { modal.classList.add('hidden'); modal.classList.remove('flex'); form.reset(); editingIdInput.value = ''; }
+        function closeActiveCard() { if (activeCard) { activeCard.querySelector('.swipe-content').style.transform = 'translateX(0)'; activeCard = null; } }
+
+        addBtn.addEventListener('click', () => { modalTitle.textContent = '添加新的机会'; showModal(); });
+        cancelBtn.addEventListener('click', hideModal);
+        modal.addEventListener('click', (e) => { if (e.target === modal) hideModal(); });
+
+        saveBtn.addEventListener('click', () => {
+            const id = editingIdInput.value;
+            const oppData = {
+                company: document.getElementById('company-name').value,
+                position: document.getElementById('position-name').value,
+                jd: document.getElementById('position-jd').value,
+                source: document.getElementById('source').value,
+                status: document.getElementById('status').value,
+            };
+
+            if (!oppData.company || !oppData.position) { alert('公司和职位名称为必填项！'); return; }
+
+            if (id) { // Editing
+                const index = opportunities.findIndex(o => o.id === id);
+                opportunities[index] = { ...opportunities[index], ...oppData };
+            } else { // Adding
+                opportunities.unshift({ ...oppData, id: generateId(), details: '<span><i class="fa-solid fa-clock mr-1"></i> 刚刚添加</span>' });
+            }
+            renderList();
+            hideModal();
+        });
+
+        opportunityList.addEventListener('mousedown', (e) => {
+            const cardContent = e.target.closest('.swipe-content');
+            if (!cardContent) return;
+            pressStartTime = Date.now();
+            longPressTimer = setTimeout(() => {
+                const container = cardContent.parentElement;
+                if (container !== activeCard) closeActiveCard();
+                cardContent.style.transform = 'translateX(-120px)';
+                activeCard = container;
+                longPressTimer = null;
+            }, 500);
+        });
+
+        opportunityList.addEventListener('mouseup', (e) => {
+            if(longPressTimer) clearTimeout(longPressTimer);
+            const container = e.target.closest('.swipe-container');
+            if (container && Date.now() - pressStartTime < 200 && !activeCard) {
+                const opp = opportunities.find(o => o.id === container.dataset.id);
+                if (opp) {
+                    const url = `opportunity-detail.html?position=${encodeURIComponent(opp.position)}&company=${encodeURIComponent(opp.company)}&jd=${encodeURIComponent(opp.jd || '')}`;
+                    window.location.href = url; // Navigate within the iframe
+                }
+            }
+        });
+
+        opportunityList.addEventListener('click', (e) => {
+            const container = e.target.closest('.swipe-container');
+            if (!container) return;
+            const id = container.dataset.id;
+            if (e.target.classList.contains('delete-btn')) {
+                if (confirm('确定要删除这个机会吗？')) {
+                    opportunities = opportunities.filter(o => o.id !== id);
+                    renderList();
+                }
+            }
+            if (e.target.classList.contains('edit-btn')) {
+                const opp = opportunities.find(o => o.id === id);
+                modalTitle.textContent = '编辑机会';
+                editingIdInput.value = opp.id;
+                document.getElementById('company-name').value = opp.company;
+                document.getElementById('position-name').value = opp.position;
+                document.getElementById('position-jd').value = opp.jd || '';
+                document.getElementById('source').value = opp.source || '';
+                document.getElementById('status').value = opp.status;
+                showModal();
+                closeActiveCard();
+            }
+        });
+
+        document.addEventListener('click', (e) => { if (!e.target.closest('.swipe-container')) closeActiveCard(); }, true);
+
+        // Initial Load
+        opportunities = [
+            { id: generateId(), position: '前端开发工程师', company: '谷歌 (Google)', status: '面试中', jd: '负责前端界面的开发...', details: '<span><i class="fa-solid fa-calendar-alt mr-1"></i> 下一轮: 技术二面</span><span class="font-semibold">明天</span>' },
+            { id: generateId(), position: '后端工程师', company: 'Meta', status: '待投递', jd: '负责后端服务的开发...', details: '<span><i class="fa-solid fa-paper-plane mr-1"></i> 3天前已申请</span>' },
+            { id: generateId(), position: '产品经理', company: '亚马逊 (Amazon)', status: '已发Offer', jd: '负责产品规划与设计...', details: '<span><i class="fa-solid fa-check-circle mr-1"></i> 已收到Offer</span>' },
+            { id: generateId(), position: '数据科学家', company: '网飞 (Netflix)', status: '已结束', jd: '负责数据分析与建模...', details: '<span><i class="fa-solid fa-times-circle mr-1"></i> 流程已终止</span>' }
+        ];
+        renderList();
+    </script>
+</body>
+</html>
