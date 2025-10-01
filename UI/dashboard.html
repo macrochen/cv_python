@@ -16,13 +16,11 @@
             <p class="text-xl font-semibold text-gray-800">欢迎回来, 祝你早日拿到心仪的Offer!</p>
         </div>
 
-        
-
         <!-- Ability Analysis -->
         <div>
             <h2 class="text-xl font-bold text-gray-800 mb-3">能力分析</h2>
             <div class="bg-white p-4 rounded-xl shadow-sm">
-                <p class="text-sm text-gray-500 mb-4">最近一次 "前端开发 @ 谷歌" 的评估</p>
+                <p class="text-sm text-gray-500 mb-2">最近两次能力评估对比</p>
                 <div class="flex justify-center items-center h-56">
                     <svg viewBox="0 0 200 200" class="w-full h-full">
                         <defs>
@@ -39,13 +37,12 @@
                             <polygon points="0,-20 19.0,-6.2 11.8,16.2 -11.8,16.2 -19.0,-6.2" fill="none" stroke="#e5e7eb" stroke-width="1"/>
 
                             <!-- Axes -->
-                            <line x1="0" y1="0" x2="0" y2="-80" stroke="#e5e7eb" stroke-width="1"/>
-                            <line x1="0" y1="0" x2="76.1" y2="-24.7" stroke="#e5e7eb" stroke-width="1"/>
-                            <line x1="0" y1="0" x2="47.0" y2="64.7" stroke="#e5e7eb" stroke-width="1"/>
-                            <line x1="0" y1="0" x2="-47.0" y2="64.7" stroke="#e5e7eb" stroke-width="1"/>
-                            <line x1="0" y1="0" x2="-76.1" y2="-24.7" stroke="#e5e7eb" stroke-width="1"/>
+                            <line x1="0" y1="0" x2="0" y2="-80" stroke="#e5e7eb" stroke-width="1"/><line x1="0" y1="0" x2="76.1" y2="-24.7" stroke="#e5e7eb" stroke-width="1"/><line x1="0" y1="0" x2="47.0" y2="64.7" stroke="#e5e7eb" stroke-width="1"/><line x1="0" y1="0" x2="-47.0" y2="64.7" stroke="#e5e7eb" stroke-width="1"/><line x1="0" y1="0" x2="-76.1" y2="-24.7" stroke="#e5e7eb" stroke-width="1"/>
 
-                            <!-- Data Polygon -->
+                            <!-- Data Polygon (Previous) -->
+                            <polygon points="0,-65 55,-15 20,30 -35,50 -50,-10" fill="none" stroke="#cccccc" stroke-width="1.5" stroke-dasharray="4"/>
+
+                            <!-- Data Polygon (Latest) -->
                             <polygon points="0,-72 68.5,-22.2 28.2,38.8 -42.3,58.2 -57.1,-18.5" fill="url(#radarGradient)" stroke="#3B82F6" stroke-width="2"/>
 
                             <!-- Labels -->
@@ -57,35 +54,113 @@
                         </g>
                     </svg>
                 </div>
+                <div class="text-center text-xs text-gray-400 mt-2">
+                    <span class="inline-block align-middle"><svg width="10" height="10" viewBox="0 0 10 10" class="inline-block mr-1"><rect width="10" height="10" fill="rgba(59, 130, 246, 0.4)"/></svg>最新评估</span>
+                    <span class="inline-block align-middle ml-3"><svg width="10" height="10" viewBox="0 0 10 10" class="inline-block mr-1"><line x1="0" y1="5" x2="10" y2="5" stroke="#cccccc" stroke-width="2" stroke-dasharray="2"/></svg>上次评估</span>
+                </div>
             </div>
         </div>
 
-        <!-- Recent Activity -->
+        <!-- Action Suggestions -->
         <div>
-            <h2 class="text-xl font-bold text-gray-800 mb-3">最近动态</h2>
-            <div class="space-y-3">
-                <div class="bg-white p-4 rounded-xl shadow-sm flex items-center space-x-4">
-                    <div class="bg-blue-100 text-blue-600 p-3 rounded-full">
-                        <i class="fa-solid fa-file-alt"></i>
-                    </div>
-                    <div>
-                        <p class="font-semibold text-gray-800">AI简历已生成</p>
-                        <p class="text-sm text-gray-500">针对 "后端工程师 @ Meta"</p>
-                    </div>
-                    <span class="text-xs text-gray-400 ml-auto">1小时前</span>
-                </div>
-                <div class="bg-white p-4 rounded-xl shadow-sm flex items-center space-x-4">
-                    <div class="bg-green-100 text-green-600 p-3 rounded-full">
-                        <i class="fa-solid fa-microphone"></i>
-                    </div>
-                    <div>
-                        <p class="font-semibold text-gray-800">模拟面试已完成</p>
-                        <p class="text-sm text-gray-500">得分: 88/100</p>
-                    </div>
-                     <span class="text-xs text-gray-400 ml-auto">3小时前</span>
-                </div>
+            <h2 class="text-xl font-bold text-gray-800 mb-3">行动建议</h2>
+            <div id="action-suggestions" class="space-y-3">
+                <!-- Action items will be injected here by JavaScript -->
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Mock data representing opportunities from the database/localStorage
+            const mockOpportunities = [
+                {
+                    position: '前端开发工程师',
+                    company: '谷歌 (Google)',
+                    status: '面试中',
+                    jd: '负责谷歌搜索前端界面的开发与维护...'
+                },
+                {
+                    position: '产品经理',
+                    company: '字节跳动',
+                    status: '待投递',
+                    jd: '负责抖音用户增长策略的制定和执行...'
+                },
+                {
+                    position: '后端工程师',
+                    company: 'Meta',
+                    status: '已投递',
+                    jd: '负责Facebook核心社交功能的后端服务开发...'
+                },
+                {
+                    position: '数据科学家',
+                    company: '网飞 (Netflix)',
+                    status: '已结束',
+                    jd: '负责内容推荐算法的研发与优化...'
+                }
+            ];
+
+            const suggestionsContainer = document.getElementById('action-suggestions');
+
+            function getActionItemHTML(opp) {
+                let actionText, buttonText, buttonIcon, link, bgColor, textColor;
+
+                const detailPageUrl = `opportunity-detail.html?position=${encodeURIComponent(opp.position)}&company=${encodeURIComponent(opp.company)}&jd=${encodeURIComponent(opp.jd || '')}`;
+
+                switch (opp.status) {
+                    case '面试中':
+                        actionText = `<strong>${opp.company}</strong> 的面试正在进行中`;
+                        buttonText = '进行面试演练';
+                        buttonIcon = 'fa-microphone';
+                        link = `${detailPageUrl}#practice`; // Example hash to trigger action
+                        bgColor = 'bg-purple-100';
+                        textColor = 'text-purple-800';
+                        break;
+                    case '待投递':
+                        actionText = `准备申请 <strong>${opp.company} - ${opp.position}</strong>`;
+                        buttonText = '生成定制简历';
+                        buttonIcon = 'fa-file-alt';
+                        link = `${detailPageUrl}#resume`; // Example hash
+                        bgColor = 'bg-blue-100';
+                        textColor = 'text-blue-800';
+                        break;
+                    case '已投递':
+                    case '笔试中':
+                        actionText = `为 <strong>${opp.company}</strong> 做好面试准备`;
+                        buttonText = '预测面试问题';
+                        buttonIcon = 'fa-brain';
+                        link = `${detailPageUrl}#qa`; // Example hash
+                        bgColor = 'bg-yellow-100';
+                        textColor = 'text-yellow-800';
+                        break;
+                    default:
+                        return ''; // Don't show anything for '已发Offer' or '已结束'
+                }
+
+                return `
+                    <a href="${link}" class="block bg-white p-4 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                        <div class="flex items-center justify-between">
+                            <p class="text-sm text-gray-700">${actionText}</p>
+                            <div class="${bgColor} ${textColor} text-xs font-bold px-4 py-2 rounded-full flex items-center space-x-2">
+                                <i class="fa-solid ${buttonIcon}"></i>
+                                <span>${buttonText}</span>
+                            </div>
+                        </div>
+                    </a>
+                `;
+            }
+
+            function renderSuggestions() {
+                const content = mockOpportunities.map(getActionItemHTML).join('');
+                if (content) {
+                    suggestionsContainer.innerHTML = content;
+                } else {
+                    suggestionsContainer.innerHTML = `<p class="text-center text-gray-500 py-4">暂无行动建议，去机会列表添加新的机会吧！</p>`;
+                }
+            }
+
+            renderSuggestions();
+        });
+    </script>
 </body>
 </html>
