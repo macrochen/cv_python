@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         body { background-color: #f8f9fa; }
         .prose h1, .prose h2, .prose h3 { font-weight: bold; margin-top: 1em; margin-bottom: 0.5em; }
@@ -95,7 +96,8 @@
                 </div>
                 <div id="resume-content-container" class="hidden">
                     <div id="resume-display-mode">
-                        <div class="flex justify-end mb-2">
+                        <div class="flex justify-end mb-2 space-x-2">
+                            <button id="resume-download-btn" class="bg-blue-500 text-white text-sm font-semibold py-1 px-3 rounded-md hover:bg-blue-600">下载PDF</button>
                             <button id="resume-edit-btn" class="bg-gray-200 text-sm font-semibold py-1 px-3 rounded-md hover:bg-gray-300">编辑</button>
                         </div>
                         <div id="resume-preview-area" class="prose p-4 border rounded bg-gray-50 min-h-[200px]"></div>
@@ -231,6 +233,7 @@
                 resumeDisplayMode: getEl('resume-display-mode'),
                 resumeEditMode: getEl('resume-edit-mode'),
                 resumeEditBtn: getEl('resume-edit-btn'),
+                resumeDownloadBtn: getEl('resume-download-btn'),
                 resumeSaveBtn: getEl('resume-save-btn'),
                 resumeCancelBtn: getEl('resume-cancel-btn'),
                 resumeEditor: getEl('resume-editor'),
@@ -270,6 +273,57 @@
             const showToast = (message) => alert(message);
             const activateTab = (tabName) => queryEl(`.secondary-tab[data-tab='${tabName}']`)?.click();
 
+            function downloadResumeAsPDF() {
+                const resumeContent = elements.resumePreviewArea.innerHTML;
+                const position = opportunityData.position;
+                const company = opportunityData.company;
+                const filename = `${company}_${position}_简历.pdf`;
+
+                // Create a printable element
+                const printElement = document.createElement('div');
+                
+                // Basic A4 styling
+                printElement.style.width = '210mm';
+                printElement.style.minHeight = '297mm';
+                printElement.style.padding = '20mm';
+                printElement.style.fontFamily = `'Helvetica Neue', Helvetica, Arial, sans-serif`;
+                printElement.style.fontSize = '11pt';
+                printElement.style.color = '#333';
+                
+                printElement.innerHTML = resumeContent;
+
+                // More specific styling for PDF
+                const style = document.createElement('style');
+                style.innerHTML = `
+                    @media print {
+                        body { -webkit-print-color-adjust: exact; }
+                    }
+                    h1, h2, h3, h4, h5, h6 { 
+                        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+                        color: #000;
+                        margin-top: 1.2em;
+                        margin-bottom: 0.6em;
+                    }
+                    h1 { font-size: 22pt; border-bottom: 2px solid #333; padding-bottom: 4px; margin-bottom: 0.8em;}
+                    h3 { font-size: 14pt; border-bottom: 1px solid #ccc; padding-bottom: 2px; }
+                    ul { padding-left: 20px; list-style-position: outside;}
+                    p, li { line-height: 1.5; }
+                    hr { display: none; }
+                `;
+                printElement.prepend(style);
+
+                const opt = {
+                    margin: 0,
+                    filename: filename,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                };
+
+                // Use html2pdf to generate and download
+                html2pdf().from(printElement).set(opt).save();
+            }
+
             // 4.1 Secondary Tabs Logic
             elements.secondaryTabs.forEach(button => {
                 button.addEventListener('click', () => {
@@ -294,6 +348,7 @@
                     elements.resumePreviewArea.innerHTML = marked.parse(generatedMd);
                     elements.resumePlaceholder.classList.add('hidden');
                     elements.resumeContentContainer.classList.remove('hidden');
+                    elements.resumeDownloadBtn.classList.remove('hidden');
                     elements.resumeEditMode.classList.add('hidden');
                     elements.resumeDisplayMode.classList.remove('hidden');
                     showToast("简历已生成！请在下方“简历详情”Tab中查看。");
@@ -317,6 +372,7 @@
                 elements.resumeDisplayMode.classList.remove('hidden');
                 showToast('简历修改已保存！');
             });
+            elements.resumeDownloadBtn.addEventListener('click', downloadResumeAsPDF);
 
             // 4.3 Q&A Section Logic
             function renderQaList() {
