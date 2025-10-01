@@ -89,6 +89,18 @@
             <div id="tab-details" class="tab-content space-y-4">
                 <h3 class="font-bold text-gray-700 mb-2">岗位描述 (JD)</h3>
                 <p id="opportunity-jd" class="text-sm text-gray-600 leading-relaxed whitespace-pre-line"></p>
+                <button id="analyze-jd-btn" class="mt-4 bg-blue-500 text-white text-sm font-semibold py-2 px-4 rounded-md hover:bg-blue-600"><i class="fas fa-brain mr-2"></i>AI分析JD</button>
+
+                <div id="jd-analysis-results" class="mt-6 hidden">
+                    <div id="jd-keywords-analysis" class="bg-blue-50 p-4 rounded-lg shadow-sm mb-4">
+                        <h4 class="font-bold text-blue-800 mb-2">核心关键词</h4>
+                        <div id="keywords-list" class="flex flex-wrap gap-2"></div>
+                    </div>
+                    <div id="resume-pre-match-analysis" class="bg-green-50 p-4 rounded-lg shadow-sm">
+                        <h4 class="font-bold text-green-800 mb-2">简历预匹配分析</h4>
+                        <p id="pre-match-text" class="text-sm text-green-700"></p>
+                    </div>
+                </div>
             </div>
             <div id="tab-resume" class="tab-content hidden">
                 <div id="resume-placeholder">
@@ -262,6 +274,12 @@
                 aiFeedbackText: getEl('ai-feedback-text'),
                 nextQuestionBtn: getEl('next-question-btn'),
                 showAnswerBtn: getEl('show-answer-btn'),
+
+                // New elements for JD analysis
+                analyzeJdBtn: getEl('analyze-jd-btn'),
+                jdAnalysisResults: getEl('jd-analysis-results'),
+                keywordsList: getEl('keywords-list'),
+                preMatchText: getEl('pre-match-text'),
             };
 
             // --- 3. INITIAL PAGE SETUP ---
@@ -567,6 +585,35 @@
 
             elements.showAnswerBtn.addEventListener('click', () => {
                 alert("建议答案：\n" + opportunityData.generatedQA[currentQuestionIndex].a);
+            });
+
+            // --- New JD Analysis Logic ---
+            elements.analyzeJdBtn.addEventListener('click', () => {
+                elements.analyzeJdBtn.disabled = true;
+                elements.analyzeJdBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>AI分析中...';
+                elements.jdAnalysisResults.classList.add('hidden');
+
+                setTimeout(() => {
+                    // Mock Keywords (replace with actual AI output)
+                    const mockKeywords = ['JavaScript', 'React', 'Node.js', '数据结构', '算法', '团队协作', '项目管理'];
+                    elements.keywordsList.innerHTML = mockKeywords.map(kw => `<span class="bg-blue-200 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">${kw}</span>`).join('');
+
+                    // Mock User Profile (replace with actual user data from profile.html)
+                    const mockUserProfile = {
+                        skills: ['JavaScript', 'Java', 'Python', 'Vue.js'],
+                        projects: ['电商平台 (React)', '图书管理系统 (Flask)'],
+                        experience: ['团队协作', '项目管理']
+                    };
+
+                    let preMatchFeedback = '根据您的个人信息，与该岗位JD匹配度较高。特别是**JavaScript**和**React**经验非常吻合。' +
+                                            '建议在简历中进一步突出您在**Node.js**和**算法**方面的经验，以提高匹配度.';
+                    
+                    elements.preMatchText.textContent = preMatchFeedback;
+
+                    elements.jdAnalysisResults.classList.remove('hidden');
+                    elements.analyzeJdBtn.disabled = false;
+                    elements.analyzeJdBtn.innerHTML = '<i class="fas fa-brain mr-2"></i>AI分析JD';
+                }, 2000);
             });
         });
     </script>
