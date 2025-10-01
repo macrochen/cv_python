@@ -42,7 +42,8 @@
 | `company_name` | `VARCHAR(255)` | 公司名称 |
 | `job_description`| `TEXT` | 岗位描述 (JD) |
 | `source` | `VARCHAR(100)` | 信息来源 |
-| `status` | `VARCHAR(50)` | 投递状态 |
+| `status` | `VARCHAR(50)` | 投递状态 (驱动UI，如: 面试中) |
+| `latest_progress` | `VARCHAR(255)` | **可选**: 用户手动填写的最新进展备注 (如: 等待二面通知) |
 
 #### 4. `generated_resumes` (AI生成简历表)
 | 字段名 (Field) | 类型 (Type) | 描述 (Description) |

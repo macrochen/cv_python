@@ -16,13 +16,18 @@
         #previewArea strong { font-weight: 700; }
     </style>
 </head>
-<body class="pb-20">
+<body class="pb-8">
+    <!-- Save Success Toast -->
+    <div id="toast" class="hidden fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-green-500 text-white py-3 px-8 rounded-lg shadow-lg z-50">
+        <p id="toastMessage">保存成功 ✔</p>
+    </div>
+
     <!-- Profile Header -->
-    <div class="bg-white pb-4 shadow-sm">
+    <div class="bg-white pb-5 shadow-sm">
         <div class="p-4 pt-6 flex flex-col items-center">
             <img class="h-24 w-24 rounded-full object-cover shadow-md" src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1888&auto=format&fit=crop" alt="用户头像">
             <h1 class="mt-4 text-2xl font-bold text-gray-800">张三</h1>
-            <p class="text-gray-500">软件开发工程师</p>
+            <button id="editButton" class="mt-3 bg-gray-200 text-gray-800 font-semibold py-1.5 px-5 rounded-full text-sm hover:bg-gray-300 transition-colors duration-200">编辑资料</button>
         </div>
     </div>
 
@@ -31,11 +36,7 @@
         <!-- Display Mode -->
         <div id="displayMode">
             <div class="bg-white p-6 rounded-lg shadow-md">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-bold text-gray-800">个人信息</h2>
-                    <button id="editButton" class="bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition-colors duration-200">编辑</button>
-                </div>
-                <div id="previewArea" class="p-4 border border-gray-200 rounded bg-gray-50 min-h-[200px]">
+                <div id="previewArea" class="min-h-[200px]">
                     <!-- Rendered content appears here -->
                 </div>
             </div>
@@ -44,11 +45,11 @@
         <!-- Edit Mode (Initially Hidden) -->
         <div id="editMode" class="hidden">
             <div class="bg-white p-6 rounded-lg shadow-md">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-bold text-gray-800">编辑个人信息</h2>
-                    <button id="saveButton" class="bg-green-600 text-white font-bold py-2 px-4 rounded hover:bg-green-700 transition-colors duration-200">保存</button>
+                <textarea id="profileMarkdown" class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" rows="25"></textarea>
+                <div class="mt-4 flex justify-center space-x-4">
+                    <button id="cancelButton" class="w-1/2 bg-gray-500 text-white font-bold py-3 rounded-lg hover:bg-gray-600 transition-colors duration-200">取消</button>
+                    <button id="saveButton" class="w-1/2 bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition-colors duration-200">保存</button>
                 </div>
-                <textarea id="profileMarkdown" class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" rows="20"></textarea>
             </div>
         </div>
 
@@ -61,35 +62,59 @@
         const editMode = document.getElementById('editMode');
         const editButton = document.getElementById('editButton');
         const saveButton = document.getElementById('saveButton');
+        const cancelButton = document.getElementById('cancelButton');
         const editor = document.getElementById('profileMarkdown');
         const preview = document.getElementById('previewArea');
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toastMessage');
 
         // --- DATA ---
-        const initialContent = `# 张三\n\n---\n\n### 教育背景\n- **X大学** - 计算机科学与技术 - 本科 (2020-2024)\n- GPA: 3.8/4.0\n\n### 实习经历\n**ABC科技公司 - 前端开发实习生 (2023.06 - 2023.09)**\n- 负责公司官网的日常维护和新功能开发。\n- 使用 Vue.js 框架重构了用户个人中心页面，提升了页面加载速度和用户体验。\n\n### 技能\n- **编程语言**: JavaScript, Python\n- **框架**: Vue.js, Flask\n- **工具**: Git, VS Code`;
-        editor.value = initialContent;
+        const initialContent = `# 张三\n\n---\n\n### 联系方式\n- **电话**: 138-1234-5678\n- **邮箱**: zhangsan@email.com\n- **GitHub**: github.com/zhangsan\n\n### 教育背景\n- **X大学** - 软件工程 - 本科 (2021-2025)\n- 主要课程: 数据结构, 算法, 操作系统, 计算机网络\n- GPA: 3.8/4.0\n\n### 校园经历\n**X大学学生会 - 技术部 (2022.09 - 2023.09)**\n- 负责维护学生会官方网站，并使用Node.js开发活动发布接口。\n- 参与开发了一款在线活动报名小程序，方便同学报名参与，获得了广泛好评。\n\n### 项目经历\n**基于Python的图书管理系统 (课程设计)**\n- 使用 Flask 和 SQLite 设计并开发了一个支持多人在线借阅的图书管理系统。\n- 实现了用户的注册, 登录, 图书查询, 借阅和归还功能。\n- 通过Nginx部署在个人服务器上，了解了基本的运维知识。\n\n### 荣誉奖项\n- X大学一等奖学金 (2022, 2023)\n- 全国大学生数学建模竞赛二等奖 (2023)\n\n### 技能\n- **编程语言**: 熟练掌握 Python, JavaScript, Java\n- **技术栈**: Flask, Vue.js, Node.js, MySQL, Redis\n- **工具**: Git, Docker, VS Code\n\n### 自我评价\n- 对新技术充满热情，具备良好的自学能力和解决问题的能力。\n- 拥有团队合作精神，善于沟通，能快速融入团队。\n- 责任心强，对代码质量有追求，有良好的编码习惯。`;
+        let lastSavedContent = initialContent;
 
         // --- FUNCTIONS ---
+        const showToast = (message) => {
+            toastMessage.textContent = message;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 2000); // Hide after 2 seconds
+        };
+
         const renderMarkdown = () => {
-            preview.innerHTML = marked.parse(editor.value);
+            preview.innerHTML = marked.parse(lastSavedContent);
         };
 
         const switchToEditMode = () => {
+            editor.value = lastSavedContent; // Load last saved content into editor
             displayMode.classList.add('hidden');
             editMode.classList.remove('hidden');
         };
 
-        const switchToDisplayMode = () => {
-            renderMarkdown(); // Update the preview with latest content
+        const saveAndSwitchToDisplayMode = () => {
+            lastSavedContent = editor.value; // Update the saved content
+            renderMarkdown(); // Re-render the display view
+            editMode.classList.add('hidden');
+            displayMode.classList.remove('hidden');
+            showToast("保存成功 ✔");
+        };
+
+        const cancelAndSwitchToDisplayMode = () => {
+            editor.value = lastSavedContent; // Revert any changes in editor
             editMode.classList.add('hidden');
             displayMode.classList.remove('hidden');
         };
 
         // --- EVENT LISTENERS ---
         editButton.addEventListener('click', switchToEditMode);
-        saveButton.addEventListener('click', switchToDisplayMode);
+        saveButton.addEventListener('click', saveAndSwitchToDisplayMode);
+        cancelButton.addEventListener('click', cancelAndSwitchToDisplayMode);
 
         // --- INITIAL RENDER ---
-        document.addEventListener('DOMContentLoaded', renderMarkdown);
+        document.addEventListener('DOMContentLoaded', () => {
+            editor.value = initialContent;
+            renderMarkdown();
+        });
     </script>
 </body>
 </html>
