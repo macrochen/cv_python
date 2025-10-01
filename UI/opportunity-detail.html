@@ -109,8 +109,12 @@
                 </div>
             </div>
             <div id="tab-qa" class="tab-content hidden">
-                 <p id="qa-placeholder" class="text-gray-400 p-4 text-center">尚未生成问答。请点击上方的“AI进行面试演练”按钮开始。</p>
-                 <div id="qa-list-container"></div>
+                <div id="qa-controls" class="hidden flex justify-end space-x-2 mb-4">
+                    <button id="add-qa-btn" class="bg-blue-500 text-white text-sm font-bold py-2 px-3 rounded-lg hover:bg-blue-600">+ 新增问答</button>
+                    <button id="save-qa-btn" class="bg-green-600 text-white text-sm font-bold py-2 px-3 rounded-lg hover:bg-green-700">保存全部修改</button>
+                </div>
+                <p id="qa-placeholder" class="text-gray-400 p-4 text-center">尚未生成问答。请点击上方的“AI进行面试演练”按钮开始。</p>
+                <div id="qa-list-container" class="space-y-4"></div>
             </div>
         </div>
     </div>
@@ -157,7 +161,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- 1. INITIALIZATION & DATA ---
+            // --- 1. DATA STORE ---
             const params = new URLSearchParams(window.location.search);
             const opportunityData = {
                 position: params.get('position') || '机会详情',
@@ -166,11 +170,11 @@
                 generatedResume: null,
                 generatedQA: []
             };
+            let currentQuestionIndex = 0;
 
-            // --- 2. DOM ELEMENT GETTERS (ALL IN ONE PLACE) ---
+            // --- 2. DOM ELEMENTS ---
             const getEl = (id) => document.getElementById(id);
             const queryElAll = (sel) => document.querySelectorAll(sel);
-
             const elements = {
                 title: getEl('opportunity-title'),
                 company: getEl('opportunity-company'),
@@ -197,8 +201,11 @@
                 resumeCancelBtn: getEl('resume-cancel-btn'),
                 resumeEditor: getEl('resume-editor'),
                 resumePreviewArea: getEl('resume-preview-area'),
+                qaControls: getEl('qa-controls'),
                 qaPlaceholder: getEl('qa-placeholder'),
                 qaListContainer: getEl('qa-list-container'),
+                addQaBtn: getEl('add-qa-btn'),
+                saveQaBtn: getEl('save-qa-btn'),
                 closePracticeBtn: getEl('close-practice-btn'),
                 practiceQuestion: getEl('practice-question'),
                 questionCounter: getEl('question-counter'),
@@ -217,17 +224,20 @@
             elements.company.textContent = opportunityData.company;
             elements.jd.textContent = opportunityData.jd;
 
-            // --- 4. UI LOGIC & EVENT HANDLERS ---
-            let currentQuestionIndex = 0;
+            // --- 4. LOGIC & EVENT HANDLERS ---
+            const showToast = (message) => {
+                // This is a simplified toast function for the prototype
+                alert(message);
+            };
 
             // 4.1 Secondary Tabs Logic
             elements.secondaryTabs.forEach(button => {
                 button.addEventListener('click', () => {
                     elements.secondaryTabs.forEach(btn => {
-                        btn.classList.remove('active');
+                        btn.classList.remove('active', 'border-blue-500', 'text-blue-600');
                         btn.classList.add('border-transparent', 'text-gray-500');
                     });
-                    button.classList.add('active');
+                    button.classList.add('active', 'border-blue-500', 'text-blue-600');
                     button.classList.remove('border-transparent', 'text-gray-500');
                     elements.tabContents.forEach(content => {
                         content.classList.toggle('hidden', content.id !== `tab-${button.dataset.tab}`);
@@ -244,7 +254,7 @@
                 elements.mainActionResume.disabled = true;
                 elements.mainActionResume.querySelector('h2').textContent = 'AI 正在生成中...';
                 setTimeout(() => {
-                    const generatedMd = `# 张三\n\n## 重点突出了 ${keywords || 'AI自动判断'} 的简历版本\n... (内容省略) ...`;
+                    const generatedMd = `# 简历 for ${opportunityData.position}\n\n## 重点突出了 ${keywords || 'AI自动判断'} 的方面\n... (这里是AI生成的简历内容) ...`;
                     opportunityData.generatedResume = generatedMd;
                     elements.resumeEditor.value = generatedMd;
                     elements.resumePreviewArea.innerHTML = marked.parse(generatedMd);
@@ -252,7 +262,7 @@
                     elements.resumeContentContainer.classList.remove('hidden');
                     elements.resumeEditMode.classList.add('hidden');
                     elements.resumeDisplayMode.classList.remove('hidden');
-                    alert("简历已生成！请在下方“简历详情”Tab中查看。");
+                    showToast("简历已生成！请在下方“简历详情”Tab中查看。");
                     elements.mainActionResume.disabled = false;
                     elements.mainActionResume.querySelector('h2').textContent = 'AI 生成定制简历';
                 }, 1500);
@@ -264,7 +274,7 @@
                 elements.resumeEditMode.classList.remove('hidden');
             });
             elements.resumeCancelBtn.addEventListener('click', () => {
-                elements.resumeEditor.value = opportunityData.generatedResume; // Revert changes
+                elements.resumeEditor.value = opportunityData.generatedResume;
                 elements.resumeEditMode.classList.add('hidden');
                 elements.resumeDisplayMode.classList.remove('hidden');
             });
@@ -273,34 +283,77 @@
                 elements.resumePreviewArea.innerHTML = marked.parse(opportunityData.generatedResume);
                 elements.resumeEditMode.classList.add('hidden');
                 elements.resumeDisplayMode.classList.remove('hidden');
+                showToast('简历修改已保存！');
             });
 
-            // 4.4 Interview Practice Logic
+            // 4.4 Q&A Section Logic
+            function renderQaList() {
+                if (opportunityData.generatedQA.length === 0) {
+                    elements.qaPlaceholder.classList.remove('hidden');
+                    elements.qaControls.classList.add('hidden');
+                    elements.qaListContainer.innerHTML = '';
+                } else {
+                    elements.qaPlaceholder.classList.add('hidden');
+                    elements.qaControls.classList.remove('hidden');
+                    const qaHtml = opportunityData.generatedQA.map(item => `
+                        <div class="qa-item bg-gray-50 p-3 rounded-lg border" data-id="${item.id}">
+                            <div class="flex justify-between items-start mb-2">
+                                <textarea rows="1" class="question-input font-semibold border-b-2 w-full focus:border-blue-500 outline-none bg-transparent resize-none p-1">${item.q}</textarea>
+                                <button class="delete-qa-btn text-gray-400 hover:text-red-600 ml-2 flex-shrink-0 p-1"><i class="fas fa-trash-alt"></i></button>
+                            </div>
+                            <textarea class="answer-input w-full p-2 border rounded-md text-sm" rows="4">${item.a}</textarea>
+                        </div>
+                    `).join('');
+                    elements.qaListContainer.innerHTML = qaHtml;
+                }
+            }
+            elements.addQaBtn.addEventListener('click', () => {
+                opportunityData.generatedQA.unshift({ id: Date.now(), q: '新问题...', a: '新答案...' });
+                renderQaList();
+            });
+            elements.saveQaBtn.addEventListener('click', () => {
+                const qaItems = queryElAll('.qa-item');
+                const newQAData = Array.from(qaItems).map(item => ({
+                    id: item.dataset.id,
+                    q: item.querySelector('.question-input').value,
+                    a: item.querySelector('.answer-input').value
+                })).reverse();
+                opportunityData.generatedQA = newQAData;
+                showToast('问答列表已保存！');
+            });
+            elements.qaListContainer.addEventListener('click', (e) => {
+                const deleteBtn = e.target.closest('.delete-qa-btn');
+                if (deleteBtn) {
+                    const idToDelete = deleteBtn.closest('.qa-item').dataset.id;
+                    if (confirm('确定要删除这个问题吗？')) {
+                        opportunityData.generatedQA = opportunityData.generatedQA.filter(item => String(item.id) !== idToDelete);
+                        renderQaList();
+                    }
+                }
+            });
+
+            // 4.5 Interview Practice Logic
             elements.mainActionPractice.addEventListener('click', () => {
                 elements.practiceInitialBtn.classList.add('hidden');
                 elements.practiceLoadingState.classList.remove('hidden');
                 setTimeout(() => {
                     if (opportunityData.generatedQA.length === 0) {
                         opportunityData.generatedQA = [
-                            { q: '讲一个你参与过的最有挑战性的项目。', a: 'STAR原则...' },
-                            { q: '你会如何优化一个React应用的性能？', a: '我会从...' },
-                            { q: '你对我们公司有什么了解？', a: '我了解到贵公司...' }
+                            { id: Date.now()+1, q: '讲一个你参与过的最有挑战性的项目。', a: 'STAR原则...' },
+                            { id: Date.now()+2, q: '你会如何优化一个React应用的性能？', a: '我会从...' },
+                            { id: Date.now()+3, q: '你对我们公司有什么了解？', a: '我了解到贵公司...' }
                         ];
-                        let qaHtml = opportunityData.generatedQA.map(item => `<div class="p-3 border-b last:border-b-0"><p class="font-semibold text-gray-800">${item.q}</p><p class="text-sm text-gray-600 mt-2">${item.a.replace(/\n/g, '<br>')}</p></div>`).join('');
-                        elements.qaPlaceholder.classList.add('hidden');
-                        elements.qaListContainer.innerHTML = qaHtml;
                     }
+                    renderQaList();
                     elements.practiceLoadingState.classList.add('hidden');
                     elements.practiceConfirmState.classList.remove('hidden');
                 }, 1500);
             });
-
             elements.startPracticeBtn.addEventListener('click', () => {
                 currentQuestionIndex = 0;
                 displayQuestion(currentQuestionIndex);
                 elements.practiceOverlay.classList.remove('hidden');
             });
-
             function displayQuestion(index) {
                 elements.practiceQuestion.textContent = opportunityData.generatedQA[index].q;
                 elements.questionCounter.textContent = `${index + 1}/${opportunityData.generatedQA.length}`;
@@ -308,7 +361,6 @@
                 elements.practiceRecordingState.classList.add('hidden');
                 elements.practiceFeedbackState.classList.add('hidden');
             }
-
             elements.closePracticeBtn.addEventListener('click', () => elements.practiceOverlay.classList.add('hidden'));
             elements.startRecordingBtn.addEventListener('click', () => {
                 elements.practiceInitialState.classList.add('hidden');
