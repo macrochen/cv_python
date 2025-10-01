@@ -125,7 +125,7 @@
                     <!-- Overall Score -->
                     <div class="text-center">
                         <p class="text-sm text-gray-500">综合评分</p>
-                        <p id="report-score" class="text-6xl font-bold text-blue-600">88</p>
+                        <p id="report-score" class="text-6xl font-bold text-blue-600"></p>
                     </div>
                     <!-- Radar Chart -->
                     <div class="h-56">
@@ -134,21 +134,17 @@
                     <!-- Overall Feedback -->
                     <div>
                         <h3 class="font-bold text-gray-700 mb-2">整体评价</h3>
-                        <p id="report-feedback" class="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">本次面试表现出色，沟通流畅，技术知识扎实。在回答关于项目挑战的问题时，可以更多地使用STAR原则来构建回答，使逻辑更清晰。</p>
+                        <p id="report-feedback" class="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg"></p>
+                    </div>
+                     <!-- Session Details -->
+                    <div id="report-session-details-container" class="hidden">
+                        <h3 class="font-bold text-gray-700 mb-2">会话详情</h3>
+                        <div id="report-session-details" class="space-y-3"></div>
                     </div>
                     <!-- History -->
                     <div>
                         <h3 class="font-bold text-gray-700 mb-2">历史记录</h3>
-                        <div id="report-history-list" class="space-y-2">
-                            <div class="flex justify-between items-center bg-gray-50 p-2 rounded-lg text-sm">
-                                <span><i class="fas fa-history mr-2 text-gray-400"></i>2024年5月20日 模拟面试</span>
-                                <span class="font-semibold text-blue-600">88分</span>
-                            </div>
-                            <div class="flex justify-between items-center bg-gray-50 p-2 rounded-lg text-sm">
-                                <span><i class="fas fa-history mr-2 text-gray-400"></i>2024年5月18日 模拟面试</span>
-                                <span class="font-semibold text-gray-500">75分</span>
-                            </div>
-                        </div>
+                        <div id="report-history-list" class="space-y-2"></div>
                     </div>
                 </div>
             </div>
@@ -246,7 +242,12 @@
                 saveQaBtn: getEl('save-qa-btn'),
                 reportPlaceholder: getEl('report-placeholder'),
                 reportContentContainer: getEl('report-content-container'),
+                reportScore: getEl('report-score'),
                 reportRadarChart: getEl('report-radar-chart'),
+                reportFeedback: getEl('report-feedback'),
+                reportSessionDetailsContainer: getEl('report-session-details-container'),
+                reportSessionDetails: getEl('report-session-details'),
+                reportHistoryList: getEl('report-history-list'),
                 closePracticeBtn: getEl('close-practice-btn'),
                 practiceQuestion: getEl('practice-question'),
                 questionCounter: getEl('question-counter'),
@@ -266,28 +267,15 @@
             elements.jd.textContent = opportunityData.jd;
 
             // --- 4. LOGIC & EVENT HANDLERS ---
-            const showToast = (message) => {
-                // This is a simplified toast function for the prototype
-                alert(message);
-            };
-            
-            const activateTab = (tabName) => {
-                const tabButton = queryEl(`.secondary-tab[data-tab='${tabName}']`);
-                if (tabButton) tabButton.click();
-            }
+            const showToast = (message) => alert(message);
+            const activateTab = (tabName) => queryEl(`.secondary-tab[data-tab='${tabName}']`)?.click();
 
             // 4.1 Secondary Tabs Logic
             elements.secondaryTabs.forEach(button => {
                 button.addEventListener('click', () => {
-                    elements.secondaryTabs.forEach(btn => {
-                        btn.classList.remove('active', 'border-blue-500', 'text-blue-600');
-                        btn.classList.add('border-transparent', 'text-gray-500');
-                    });
-                    button.classList.add('active', 'border-blue-500', 'text-blue-600');
-                    button.classList.remove('border-transparent', 'text-gray-500');
-                    elements.tabContents.forEach(content => {
-                        content.classList.toggle('hidden', content.id !== `tab-${button.dataset.tab}`);
-                    });
+                    elements.secondaryTabs.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    elements.tabContents.forEach(content => content.classList.toggle('hidden', content.id !== `tab-${button.dataset.tab}`));
                 });
             });
 
@@ -313,8 +301,6 @@
                     elements.mainActionResume.querySelector('h2').textContent = 'AI 生成定制简历';
                 }, 1500);
             });
-
-            // 4.3 Resume Edit/Save/Cancel Logic
             elements.resumeEditBtn.addEventListener('click', () => {
                 elements.resumeDisplayMode.classList.add('hidden');
                 elements.resumeEditMode.classList.remove('hidden');
@@ -332,7 +318,7 @@
                 showToast('简历修改已保存！');
             });
 
-            // 4.4 Q&A Section Logic
+            // 4.3 Q&A Section Logic
             function renderQaList() {
                 if (opportunityData.generatedQA.length === 0) {
                     elements.qaPlaceholder.classList.remove('hidden');
@@ -378,40 +364,81 @@
                 }
             });
 
-            // 4.5 Interview Practice & Report Logic
-            function renderRadarChart() {
-                // This is a mock radar chart rendering
-                elements.reportRadarChart.innerHTML = `
-                    <defs>
-                        <linearGradient id="radarGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                            <stop offset="0%" style="stop-color:rgba(59, 130, 246, 0.4)" />
-                            <stop offset="100%" style="stop-color:rgba(59, 130, 246, 0.1)" />
-                        </linearGradient>
-                    </defs>
+            // 4.4 Interview Practice & Report Logic
+            function renderRadarChart(targetElement) {
+                targetElement.innerHTML = `
+                    <defs><linearGradient id="radarGradient" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:rgba(59, 130, 246, 0.4)" /><stop offset="100%" style="stop-color:rgba(59, 130, 246, 0.1)" /></linearGradient></defs>
                     <g transform="translate(100,100)">
-                        <polygon points="0,-80 76.1,-24.7 47.0,64.7 -47.0,64.7 -76.1,-24.7" fill="none" stroke="#e5e7eb" stroke-width="1"/>
-                        <polygon points="0,-60 57.1,-18.5 35.3,48.5 -35.3,48.5 -57.1,-18.5" fill="none" stroke="#e5e7eb" stroke-width="1"/>
-                        <polygon points="0,-40 38.0,-12.3 23.5,32.3 -23.5,32.3 -38.0,-12.3" fill="none" stroke="#e5e7eb" stroke-width="1"/>
-                        <polygon points="0,-20 19.0,-6.2 11.8,16.2 -11.8,16.2 -19.0,-6.2" fill="none" stroke="#e5e7eb" stroke-width="1"/>
+                        <polygon points="0,-80 76.1,-24.7 47.0,64.7 -47.0,64.7 -76.1,-24.7" fill="none" stroke="#e5e7eb" stroke-width="1"/><polygon points="0,-60 57.1,-18.5 35.3,48.5 -35.3,48.5 -57.1,-18.5" fill="none" stroke="#e5e7eb" stroke-width="1"/><polygon points="0,-40 38.0,-12.3 23.5,32.3 -23.5,32.3 -38.0,-12.3" fill="none" stroke="#e5e7eb" stroke-width="1"/><polygon points="0,-20 19.0,-6.2 11.8,16.2 -11.8,16.2 -19.0,-6.2" fill="none" stroke="#e5e7eb" stroke-width="1"/>
                         <line x1="0" y1="0" x2="0" y2="-80" stroke="#e5e7eb" stroke-width="1"/><line x1="0" y1="0" x2="76.1" y2="-24.7" stroke="#e5e7eb" stroke-width="1"/><line x1="0" y1="0" x2="47.0" y2="64.7" stroke="#e5e7eb" stroke-width="1"/><line x1="0" y1="0" x2="-47.0" y2="64.7" stroke="#e5e7eb" stroke-width="1"/><line x1="0" y1="0" x2="-76.1" y2="-24.7" stroke="#e5e7eb" stroke-width="1"/>
-                        <polygon points="0,-72 68.5,-22.2 28.2,38.8 -42.3,58.2 -57.1,-18.5" fill="url(#radarGradient)" stroke="#3B82F6" stroke-width="2"/>
-                        <text x="0" y="-88" text-anchor="middle" font-size="10" fill="#4b5563">沟通能力</text>
-                        <text x="85" y="-22" text-anchor="start" font-size="10" fill="#4b5563">岗位匹配</text>
-                        <text x="52" y="78" text-anchor="middle" font-size="10" fill="#4b5563">逻辑思维</text>
-                        <text x="-52" y="78" text-anchor="middle" font-size="10" fill="#4b5563">技术深度</text>
-                        <text x="-85" y="-22" text-anchor="end" font-size="10" fill="#4b5563">STAR原则</text>
+                        <polygon points="0,-${Math.random()*20+60} ${Math.random()*20+60},-22.2 28.2,${Math.random()*20+40} -42.3,58.2 -${Math.random()*20+50},-18.5" fill="url(#radarGradient)" stroke="#3B82F6" stroke-width="2"/>
+                        <text x="0" y="-88" text-anchor="middle" font-size="10" fill="#4b5563">沟通能力</text><text x="85" y="-22" text-anchor="start" font-size="10" fill="#4b5563">岗位匹配</text><text x="52" y="78" text-anchor="middle" font-size="10" fill="#4b5563">逻辑思维</text><text x="-52" y="78" text-anchor="middle" font-size="10" fill="#4b5563">技术深度</text><text x="-85" y="-22" text-anchor="end" font-size="10" fill="#4b5563">STAR原则</text>
                     </g>`;
             }
 
-            function finishInterview() {
+            function renderHistoryList() {
+                if (opportunityData.interviewHistory.length === 0) {
+                    elements.reportPlaceholder.classList.remove('hidden');
+                    elements.reportContentContainer.classList.add('hidden');
+                    return;
+                }
+                elements.reportHistoryList.innerHTML = opportunityData.interviewHistory.map(session => `
+                    <div class="history-item flex justify-between items-center bg-gray-50 p-2 rounded-lg text-sm cursor-pointer hover:bg-gray-100" data-session-id="${session.id}">
+                        <span><i class="fas fa-history mr-2 text-gray-400"></i>${session.date} 模拟面试</span>
+                        <span class="font-semibold text-blue-600">${session.score}分</span>
+                    </div>`).join('');
+            }
+
+            function loadReport(sessionId) {
+                const session = opportunityData.interviewHistory.find(s => s.id === sessionId);
+                if (!session) return;
+
+                elements.reportPlaceholder.classList.add('hidden');
+                elements.reportContentContainer.classList.remove('hidden');
+
+                elements.reportScore.textContent = session.score;
+                elements.reportFeedback.textContent = session.summary;
+                renderRadarChart(elements.reportRadarChart);
+
+                elements.reportSessionDetails.innerHTML = session.answeredQuestions.map(qa => `
+                    <div class="bg-gray-50 p-3 rounded-lg border">
+                        <p class="font-semibold text-gray-800">${qa.q}</p>
+                        <p class="text-xs text-gray-500 mt-2">你的回答:</p>
+                        <p class="text-sm text-gray-700 p-2 bg-white rounded mt-1">${qa.a}</p>
+                        <p class="text-xs text-gray-500 mt-2">AI反馈:</p>
+                        <p class="text-sm text-green-700 p-2 bg-green-50 rounded mt-1">${qa.feedback}</p>
+                    </div>`).join('');
+                elements.reportSessionDetailsContainer.classList.remove('hidden');
+            }
+
+            function finishInterview(isInterrupted = false) {
                 elements.practiceOverlay.classList.add('hidden');
+                const questionsInSession = opportunityData.generatedQA.slice(0, currentQuestionIndex + 1);
+                const score = Math.floor(Math.random() * 21) + 75; // Random score 75-95
+                let summary = "本次面试表现出色，沟通流畅，技术知识扎实。在回答关于项目挑战的问题时，可以更多地使用STAR原则来构建回答，使逻辑更清晰。";
+                if (isInterrupted) {
+                    summary += ` (本次评估基于您已回答的 ${questionsInSession.length} 个问题生成。)`
+                }
+
+                const newSession = {
+                    id: Date.now(),
+                    date: new Date().toLocaleDateString('zh-CN'),
+                    score: score,
+                    summary: summary,
+                    answeredQuestions: questionsInSession.map(qa => ({
+                        q: qa.q,
+                        a: "这是用户回答的模拟文字记录。", // Mock user answer
+                        feedback: "AI对这个回答的模拟反馈：逻辑清晰，表达流畅。" // Mock feedback
+                    }))
+                };
+                opportunityData.interviewHistory.unshift(newSession);
+
                 showToast("面试完成！正在生成评估报告...");
                 setTimeout(() => {
-                    elements.reportPlaceholder.classList.add('hidden');
-                    elements.reportContentContainer.classList.remove('hidden');
-                    renderRadarChart();
+                    renderHistoryList();
+                    loadReport(newSession.id);
                     activateTab('report');
-                }, 1000);
+                }, 500);
             }
 
             elements.mainActionPractice.addEventListener('click', () => {
@@ -425,7 +452,7 @@
                             { id: Date.now()+3, q: '你对我们公司有什么了解？', a: '我了解到贵公司...' }
                         ];
                     }
-                    renderQaList();
+                    renderQaList(); // Restored this call
                     elements.practiceLoadingState.classList.add('hidden');
                     elements.practiceConfirmState.classList.remove('hidden');
                 }, 1500);
@@ -444,7 +471,6 @@
                 elements.practiceRecordingState.classList.add('hidden');
                 elements.practiceFeedbackState.classList.add('hidden');
                 
-                // Update button for last question
                 if (index === opportunityData.generatedQA.length - 1) {
                     elements.nextQuestionBtn.textContent = '完成面试，查看评估';
                     elements.nextQuestionBtn.classList.replace('bg-blue-600', 'bg-green-600');
@@ -453,24 +479,36 @@
                     elements.nextQuestionBtn.classList.replace('bg-green-600', 'bg-blue-600');
                 }
             }
-            elements.closePracticeBtn.addEventListener('click', () => elements.practiceOverlay.classList.add('hidden'));
-            elements.startRecordingBtn.addEventListener('click', () => {
-                elements.practiceInitialState.classList.add('hidden');
-                elements.practiceRecordingState.classList.remove('hidden');
+
+            elements.closePracticeBtn.addEventListener('click', () => {
+                if (confirm("您确定要提前结束本次面试吗？系统将根据您已完成的回答生成一份评估报告。")) {
+                    finishInterview(true);
+                }
             });
+
             elements.stopRecordingBtn.addEventListener('click', () => {
                 elements.practiceRecordingState.classList.add('hidden');
                 elements.practiceFeedbackState.classList.remove('hidden');
                 elements.aiFeedbackText.textContent = "模拟AI反馈：回答得不错，逻辑清晰。可以尝试补充更多数据来支撑你的论点。";
             });
+
             elements.nextQuestionBtn.addEventListener('click', () => {
                 if (currentQuestionIndex === opportunityData.generatedQA.length - 1) {
-                    finishInterview();
+                    finishInterview(false);
                 } else {
                     currentQuestionIndex++;
                     displayQuestion(currentQuestionIndex);
                 }
             });
+
+            elements.reportHistoryList.addEventListener('click', (e) => {
+                const historyItem = e.target.closest('.history-item');
+                if (historyItem) {
+                    const sessionId = parseInt(historyItem.dataset.sessionId, 10);
+                    loadReport(sessionId);
+                }
+            });
+
             elements.showAnswerBtn.addEventListener('click', () => {
                 alert("建议答案：\n" + opportunityData.generatedQA[currentQuestionIndex].a);
             });
