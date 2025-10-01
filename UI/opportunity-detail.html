@@ -2,256 +2,331 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>机会详情 - AI面试助手</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         body { background-color: #f8f9fa; }
-        .tab-btn.active { border-bottom-color: #3b82f6; color: #3b82f6; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
         .prose h1, .prose h2, .prose h3 { font-weight: bold; margin-top: 1em; margin-bottom: 0.5em; }
-        .prose h1 { font-size: 1.5rem; }
-        .prose h2 { font-size: 1.25rem; }
-        .prose h3 { font-size: 1.1rem; }
+        .prose h1 { font-size: 1.5rem; } .prose h2 { font-size: 1.25rem; } .prose h3 { font-size: 1.1rem; }
         .prose p { margin-bottom: 1em; }
         .prose ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }
-        .prose li { margin-bottom: 0.25em; }
-        .prose strong { font-weight: bold; }
+        .secondary-tab.active { border-bottom-color: #3b82f6; color: #3b82f6; font-weight: 600; }
     </style>
 </head>
-<body class="p-4">
+<body class="pb-20">
     <!-- Header -->
-    <div class="mb-4 pt-2">
-        <a href="index.html#interviews" class="text-blue-600 text-sm mb-2 block">&larr; 返回列表</a>
-        <h1 id="opportunity-title" class="text-2xl font-bold text-gray-800"></h1>
-        <p id="opportunity-company" class="text-gray-500"></p>
-    </div>
-
-    <!-- Tabs -->
-    <div class="border-b border-gray-200">
-        <nav class="-mb-px flex space-x-6" aria-label="Tabs">
-            <button class="tab-btn active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm border-blue-500 text-blue-600" data-tab="details">职位详情</button>
-            <button class="tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500" data-tab="resume">AI 定制简历</button>
-            <button class="tab-btn whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500" data-tab="qa">AI 面试顾问</button>
-        </nav>
-    </div>
-
-    <!-- Tab Content -->
-    <div class="mt-4">
-        <div id="tab-details" class="tab-content active space-y-4">
-            <div class="bg-white p-4 rounded-xl shadow-sm">
-                <h3 class="font-bold text-gray-700 mb-2">岗位描述 (JD)</h3>
-                <p id="opportunity-jd" class="text-sm text-gray-600 leading-relaxed"></p>
-            </div>
-        </div>
-        <div id="tab-resume" class="tab-content">
-            <div id="resume-initial-state" class="text-center p-8 bg-white rounded-xl shadow-sm">
-                <h3 class="text-lg font-bold">打造一份完美的简历</h3>
-                <p class="text-sm text-gray-500 mt-2 mb-4">启动AI，结合您的个人信息和岗位JD，生成一份高度匹配的专属简历。</p>
-                <button id="generate-resume-btn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700">✨ 启动AI，生成专属简历</button>
-            </div>
-            <div id="resume-edit-state" class="hidden">
-                <div class="flex justify-between items-center mb-2">
-                    <div class="flex space-x-1 rounded-md bg-gray-200 p-1 text-sm">
-                        <button id="resume-edit-mode-btn" class="px-3 py-1 rounded-md bg-white shadow">编辑</button>
-                        <button id="resume-preview-mode-btn" class="px-3 py-1">预览</button>
-                    </div>
-                    <button id="save-resume-btn" class="bg-green-600 text-white text-sm font-bold py-2 px-3 rounded-lg hover:bg-green-700">保存修改</button>
-                </div>
-                <textarea id="resume-textarea" rows="18" class="w-full p-2 border rounded-md"></textarea>
-                <div id="resume-preview" class="p-4 bg-white border rounded-md prose" style="display: none;"></div>
-            </div>
-        </div>
-        <div id="tab-qa" class="tab-content">
-            <div id="qa-initial-state" class="text-center p-8 bg-white rounded-xl shadow-sm">
-                 <h3 class="text-lg font-bold">从容应对任何问题</h3>
-                <p class="text-sm text-gray-500 mt-2 mb-4">启动AI，为您预测面试高频问题，并提供符合STAR原则的回答建议。</p>
-                <button id="generate-qa-btn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700">🔮 启动AI，预测问题与答案</button>
-            </div>
-            <div id="qa-edit-state" class="hidden space-y-3">
-                <div class="flex justify-end space-x-2 mb-2">
-                    <button id="add-qa-btn" class="bg-blue-500 text-white text-sm font-bold py-2 px-3 rounded-lg">+ 新增问答</button>
-                    <button id="save-qa-btn" class="bg-green-600 text-white text-sm font-bold py-2 px-3 rounded-lg">保存全部</button>
-                </div>
-                <div id="qa-list" class="space-y-2"></div>
-            </div>
+    <div class="bg-white shadow-sm pb-4">
+        <div class="container mx-auto p-4">
+            <a href="interviews.html" class="text-blue-600 text-sm mb-2 block">&larr; 返回列表</a>
+            <h1 id="opportunity-title" class="text-2xl font-bold text-gray-800"></h1>
+            <p id="opportunity-company" class="text-gray-500"></p>
         </div>
     </div>
 
-<script>
-    // --- INITIALIZATION & STATE ---
-    let opportunityData = { resumeMd: null, qa: [] };
-    const params = new URLSearchParams(window.location.search);
-    document.getElementById('opportunity-title').textContent = params.get('position') || '机会详情';
-    document.getElementById('opportunity-company').textContent = params.get('company') || '公司信息';
-    document.getElementById('opportunity-jd').textContent = params.get('jd') || '未能加载岗位描述。';
-
-    // --- ALL FUNCTION DEFINITIONS & CALLS ---
-    function setupTabs() {
-        const tabButtons = document.querySelectorAll('.tab-btn');
-        const tabContents = document.querySelectorAll('.tab-content');
-        tabButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                tabButtons.forEach(btn => {
-                    btn.classList.remove('active', 'border-blue-500', 'text-blue-600');
-                    btn.classList.add('border-transparent', 'text-gray-500');
-                });
-                button.classList.add('active', 'border-blue-500', 'text-blue-600');
-                button.classList.remove('border-transparent', 'text-gray-500');
-                tabContents.forEach(content => {
-                    content.classList.toggle('active', content.id === `tab-${button.dataset.tab}`);
-                });
-            });
-        });
-    }
-
-    function setupResumeTab() {
-        const generateBtn = document.getElementById('generate-resume-btn');
-        const saveBtn = document.getElementById('save-resume-btn');
-        const editModeBtn = document.getElementById('resume-edit-mode-btn');
-        const previewModeBtn = document.getElementById('resume-preview-mode-btn');
-        const textarea = document.getElementById('resume-textarea');
-        const preview = document.getElementById('resume-preview');
-
-        generateBtn.addEventListener('click', () => {
-            generateBtn.textContent = 'AI正在生成中...';
-            generateBtn.disabled = true;
-            setTimeout(() => {
-                opportunityData.resumeMd = `# 张三\n\n## 联系方式\n- 电话: 138-1234-5678\n- 邮箱: zhangsan@email.com\n\n## 针对“${document.getElementById('opportunity-title').textContent}”岗位的技能\n- **前端**: 精通Vue.js, React, Tailwind CSS\n- **后端**: 熟悉Node.js, Python (FastAPI)\n\n## 项目经历\n### AI面试助手 (个人项目)\n- 负责该项目的前后端开发与UI设计...`;
-                renderResume();
-            }, 1500);
-        });
-
-        function renderResume() {
-            document.getElementById('resume-initial-state').style.display = 'none';
-            document.getElementById('resume-edit-state').style.display = 'block';
-            textarea.value = opportunityData.resumeMd;
-        }
-
-        saveBtn.addEventListener('click', () => {
-            opportunityData.resumeMd = textarea.value;
-            saveBtn.textContent = '已保存!';
-            setTimeout(() => { saveBtn.textContent = '保存修改'; }, 2000);
-        });
-
-        editModeBtn.addEventListener('click', () => {
-            textarea.style.display = 'block';
-            preview.style.display = 'none';
-            editModeBtn.classList.add('bg-white', 'shadow');
-            previewModeBtn.classList.remove('bg-white', 'shadow');
-        });
-
-        previewModeBtn.addEventListener('click', () => {
-            preview.innerHTML = marked.parse(textarea.value);
-            textarea.style.display = 'none';
-            preview.style.display = 'block';
-            previewModeBtn.classList.add('bg-white', 'shadow');
-            editModeBtn.classList.remove('bg-white', 'shadow');
-        });
-    }
-
-    function setupQATab() {
-        const generateBtn = document.getElementById('generate-qa-btn');
-        const saveBtn = document.getElementById('save-qa-btn');
-        const addBtn = document.getElementById('add-qa-btn');
-        const qaListContainer = document.getElementById('qa-list');
-
-        generateBtn.addEventListener('click', () => {
-            generateBtn.textContent = 'AI正在预测中...';
-            generateBtn.disabled = true;
-            setTimeout(() => {
-                opportunityData.qa = [
-                    { id: 1, q: '讲一个你参与过的最有挑战性的项目。', a: '**情境(Situation):** 在负责XX项目时...\n**任务(Task):** 我的任务是...\n**行动(Action):** 我首先...然后...\n**结果(Result):** 最终，项目性能提升了...%' },
-                    { id: 2, q: '你会如何优化一个React应用的性能？', a: '我会从以下几个方面入手：\n1. **组件懒加载**: 使用`React.lazy`和`Suspense`...\n2. **状态管理优化**: ...' }
-                ];
-                renderQAList();
-            }, 1500);
-        });
-
-        function renderQAList() {
-            document.getElementById('qa-initial-state').style.display = 'none';
-            document.getElementById('qa-edit-state').style.display = 'block';
-            qaListContainer.innerHTML = opportunityData.qa.map(item => `
-                <div class="qa-item bg-white rounded-lg shadow-sm" data-id="${item.id}">
-                    <div class="question-header flex justify-between items-center p-3">
-                        <input type="text" class="question-input flex-grow font-semibold border-b-2 border-transparent focus:border-blue-500 outline-none bg-transparent" value="${item.q}">
-                        <div class="flex items-center space-x-2">
-                            <button class="delete-qa-btn text-gray-400 hover:text-red-600"><i class="fas fa-trash-alt"></i></button>
-                            <button class="toggle-answer-btn text-gray-500 p-1 rounded-full hover:bg-gray-100">
-                                <i class="fas fa-chevron-down transition-transform duration-200"></i>
-                            </button>
+    <!-- Main AI Actions -->
+    <div class="container mx-auto p-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="w-full bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow border-l-4 border-blue-500">
+                 <button id="main-action-resume" class="w-full text-left">
+                    <div class="flex items-center">
+                        <div class="text-3xl mr-4">✨</div>
+                        <div>
+                            <h2 class="font-bold text-lg text-gray-800">AI 生成定制简历</h2>
+                            <p class="text-sm text-gray-500 mt-1">根据JD和你的背景，量身打造简历</p>
                         </div>
                     </div>
-                    <div class="answer-content p-4 border-t border-gray-100" style="display: none;">
-                        <label class="block text-xs font-medium text-gray-500 mb-1">回答建议</label>
-                        <textarea rows="5" class="answer-input w-full p-2 border rounded-md text-sm">${item.a}</textarea>
+                </button>
+            </div>
+            <div id="practice-action-container" class="w-full bg-white p-6 rounded-xl shadow-lg border-l-4 border-purple-500">
+                <div id="practice-initial-btn">
+                    <button id="main-action-practice" class="w-full text-left">
+                        <div class="flex items-center">
+                            <div class="text-3xl mr-4">🎙️</div>
+                            <div>
+                                <h2 class="font-bold text-lg text-gray-800">AI 进行面试演练</h2>
+                                <p class="text-sm text-gray-500 mt-1">模拟实战，预测问题并练习回答</p>
+                            </div>
+                        </div>
+                    </button>
+                </div>
+                <div id="practice-loading-state" class="hidden">
+                    <div class="flex items-center">
+                        <div class="text-3xl mr-4 animate-spin"><i class="fas fa-spinner"></i></div>
+                        <div>
+                            <h2 class="font-bold text-lg text-gray-800">AI 正在生成问题...</h2>
+                            <p class="text-sm text-gray-500 mt-1">请稍候，正在分析JD和简历</p>
+                        </div>
                     </div>
-                </div>`).join('');
-        }
+                </div>
+                <div id="practice-confirm-state" class="hidden">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="font-bold text-lg text-green-600">AI 已为您生成 3 个高频问题！</h2>
+                            <p class="text-sm text-gray-500 mt-1">准备好挑战了吗？</p>
+                        </div>
+                        <button id="start-practice-btn" class="bg-purple-600 text-white font-bold py-3 px-5 rounded-lg hover:bg-purple-700">立即开始</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        addBtn.addEventListener('click', () => {
-            opportunityData.qa.unshift({ id: Date.now(), q: '新问题', a: '新答案' });
-            renderQAList();
+    <!-- Secondary Content (Details) -->
+    <div class="container mx-auto p-4">
+        <div class="border-b border-gray-200">
+            <nav class="-mb-px flex space-x-6" aria-label="Tabs">
+                <button class="secondary-tab active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-tab="details">职位详情</button>
+                <button class="secondary-tab whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500" data-tab="resume">简历详情</button>
+                <button class="secondary-tab whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500" data-tab="qa">问答详情</button>
+            </nav>
+        </div>
+        <div class="mt-4 bg-white p-4 rounded-xl shadow-sm">
+            <div id="tab-details" class="tab-content space-y-4">
+                <h3 class="font-bold text-gray-700 mb-2">岗位描述 (JD)</h3>
+                <p id="opportunity-jd" class="text-sm text-gray-600 leading-relaxed whitespace-pre-line"></p>
+            </div>
+            <div id="tab-resume" class="tab-content hidden">
+                <div id="resume-placeholder">
+                    <p class="text-gray-400 p-4 text-center">尚未生成简历。请点击上方的“AI生成定制简历”按钮开始。</p>
+                </div>
+                <div id="resume-content-container" class="hidden">
+                    <div id="resume-display-mode">
+                        <div class="flex justify-end mb-2">
+                            <button id="resume-edit-btn" class="bg-gray-200 text-sm font-semibold py-1 px-3 rounded-md hover:bg-gray-300">编辑</button>
+                        </div>
+                        <div id="resume-preview-area" class="prose p-4 border rounded bg-gray-50 min-h-[200px]"></div>
+                    </div>
+                    <div id="resume-edit-mode" class="hidden">
+                        <textarea id="resume-editor" class="w-full p-2 border rounded" rows="20"></textarea>
+                        <div class="mt-2 flex justify-end space-x-2">
+                            <button id="resume-cancel-btn" class="bg-gray-500 text-white text-sm py-1 px-3 rounded-md">取消</button>
+                            <button id="resume-save-btn" class="bg-green-600 text-white text-sm py-1 px-3 rounded-md">保存</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="tab-qa" class="tab-content hidden">
+                 <p id="qa-placeholder" class="text-gray-400 p-4 text-center">尚未生成问答。请点击上方的“AI进行面试演练”按钮开始。</p>
+                 <div id="qa-list-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODALS AND OVERLAYS -->
+    <div id="keyword-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-sm mx-auto p-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-2">关键词引导</h3>
+            <p class="text-sm text-gray-500 mb-4">输入希望AI重点突出的关键词（可选）</p>
+            <input type="text" id="resume-keywords" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="例如: Vue3, 团队合作">
+            <div class="mt-5 flex justify-end space-x-3">
+                <button id="cancel-keyword-btn" class="px-4 py-2 bg-gray-200 rounded-md text-sm font-medium">取消</button>
+                <button id="generate-with-keyword-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium">确认生成</button>
+            </div>
+        </div>
+    </div>
+    <div id="practice-overlay" class="hidden fixed inset-0 bg-gray-800 z-50 p-6 flex flex-col text-white">
+        <div class="flex-shrink-0 flex justify-between items-center">
+            <p class="font-bold">面试演练中 (<span id="question-counter">1/3</span>)</p>
+            <button id="close-practice-btn" class="text-2xl">&times;</button>
+        </div>
+        <div class="flex-grow flex flex-col justify-center items-center text-center">
+            <h2 class="text-2xl font-semibold mb-8" id="practice-question"></h2>
+            <div id="practice-initial-state">
+                <button id="start-recording-btn" class="bg-red-600 w-24 h-24 rounded-full flex flex-col items-center justify-center shadow-lg">
+                    <i class="fas fa-microphone text-3xl"></i>
+                    <span class="text-sm mt-1">开始回答</span>
+                </button>
+            </div>
+            <div id="practice-recording-state" class="hidden">
+                <p class="text-lg mb-4">正在录音中... <span id="timer">00:00</span></p>
+                <button id="stop-recording-btn" class="bg-gray-600 w-24 h-24 rounded-full flex items-center justify-center shadow-lg">■</button>
+            </div>
+            <div id="practice-feedback-state" class="hidden w-full max-w-md text-left bg-gray-700 p-4 rounded-lg">
+                <h4 class="font-bold mb-2">AI 反馈:</h4>
+                <p id="ai-feedback-text" class="text-sm"></p>
+            </div>
+        </div>
+        <div class="flex-shrink-0 flex justify-between items-center">
+            <button id="show-answer-btn" class="bg-gray-700 py-2 px-4 rounded-lg">查看建议答案</button>
+            <button id="next-question-btn" class="bg-blue-600 py-2 px-4 rounded-lg">下一题 &rarr;</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- 1. INITIALIZATION & DATA ---
+            const params = new URLSearchParams(window.location.search);
+            const opportunityData = {
+                position: params.get('position') || '机会详情',
+                company: params.get('company') || '公司信息',
+                jd: params.get('jd') || '未能加载岗位描述。',
+                generatedResume: null,
+                generatedQA: []
+            };
+
+            // --- 2. DOM ELEMENT GETTERS (ALL IN ONE PLACE) ---
+            const getEl = (id) => document.getElementById(id);
+            const queryElAll = (sel) => document.querySelectorAll(sel);
+
+            const elements = {
+                title: getEl('opportunity-title'),
+                company: getEl('opportunity-company'),
+                jd: getEl('opportunity-jd'),
+                mainActionResume: getEl('main-action-resume'),
+                mainActionPractice: getEl('main-action-practice'),
+                practiceInitialBtn: getEl('practice-initial-btn'),
+                practiceLoadingState: getEl('practice-loading-state'),
+                practiceConfirmState: getEl('practice-confirm-state'),
+                startPracticeBtn: getEl('start-practice-btn'),
+                keywordModal: getEl('keyword-modal'),
+                cancelKeywordBtn: getEl('cancel-keyword-btn'),
+                generateWithKeywordBtn: getEl('generate-with-keyword-btn'),
+                resumeKeywordsInput: getEl('resume-keywords'),
+                practiceOverlay: getEl('practice-overlay'),
+                secondaryTabs: queryElAll('.secondary-tab'),
+                tabContents: queryElAll('.tab-content'),
+                resumePlaceholder: getEl('resume-placeholder'),
+                resumeContentContainer: getEl('resume-content-container'),
+                resumeDisplayMode: getEl('resume-display-mode'),
+                resumeEditMode: getEl('resume-edit-mode'),
+                resumeEditBtn: getEl('resume-edit-btn'),
+                resumeSaveBtn: getEl('resume-save-btn'),
+                resumeCancelBtn: getEl('resume-cancel-btn'),
+                resumeEditor: getEl('resume-editor'),
+                resumePreviewArea: getEl('resume-preview-area'),
+                qaPlaceholder: getEl('qa-placeholder'),
+                qaListContainer: getEl('qa-list-container'),
+                closePracticeBtn: getEl('close-practice-btn'),
+                practiceQuestion: getEl('practice-question'),
+                questionCounter: getEl('question-counter'),
+                practiceInitialState: getEl('practice-initial-state'),
+                practiceRecordingState: getEl('practice-recording-state'),
+                practiceFeedbackState: getEl('practice-feedback-state'),
+                startRecordingBtn: getEl('start-recording-btn'),
+                stopRecordingBtn: getEl('stop-recording-btn'),
+                aiFeedbackText: getEl('ai-feedback-text'),
+                nextQuestionBtn: getEl('next-question-btn'),
+                showAnswerBtn: getEl('show-answer-btn'),
+            };
+
+            // --- 3. INITIAL PAGE SETUP ---
+            elements.title.textContent = opportunityData.position;
+            elements.company.textContent = opportunityData.company;
+            elements.jd.textContent = opportunityData.jd;
+
+            // --- 4. UI LOGIC & EVENT HANDLERS ---
+            let currentQuestionIndex = 0;
+
+            // 4.1 Secondary Tabs Logic
+            elements.secondaryTabs.forEach(button => {
+                button.addEventListener('click', () => {
+                    elements.secondaryTabs.forEach(btn => {
+                        btn.classList.remove('active');
+                        btn.classList.add('border-transparent', 'text-gray-500');
+                    });
+                    button.classList.add('active');
+                    button.classList.remove('border-transparent', 'text-gray-500');
+                    elements.tabContents.forEach(content => {
+                        content.classList.toggle('hidden', content.id !== `tab-${button.dataset.tab}`);
+                    });
+                });
+            });
+
+            // 4.2 Resume Generation Logic
+            elements.mainActionResume.addEventListener('click', () => elements.keywordModal.classList.remove('hidden'));
+            elements.cancelKeywordBtn.addEventListener('click', () => elements.keywordModal.classList.add('hidden'));
+            elements.generateWithKeywordBtn.addEventListener('click', () => {
+                const keywords = elements.resumeKeywordsInput.value;
+                elements.keywordModal.classList.add('hidden');
+                elements.mainActionResume.disabled = true;
+                elements.mainActionResume.querySelector('h2').textContent = 'AI 正在生成中...';
+                setTimeout(() => {
+                    const generatedMd = `# 张三\n\n## 重点突出了 ${keywords || 'AI自动判断'} 的简历版本\n... (内容省略) ...`;
+                    opportunityData.generatedResume = generatedMd;
+                    elements.resumeEditor.value = generatedMd;
+                    elements.resumePreviewArea.innerHTML = marked.parse(generatedMd);
+                    elements.resumePlaceholder.classList.add('hidden');
+                    elements.resumeContentContainer.classList.remove('hidden');
+                    elements.resumeEditMode.classList.add('hidden');
+                    elements.resumeDisplayMode.classList.remove('hidden');
+                    alert("简历已生成！请在下方“简历详情”Tab中查看。");
+                    elements.mainActionResume.disabled = false;
+                    elements.mainActionResume.querySelector('h2').textContent = 'AI 生成定制简历';
+                }, 1500);
+            });
+
+            // 4.3 Resume Edit/Save/Cancel Logic
+            elements.resumeEditBtn.addEventListener('click', () => {
+                elements.resumeDisplayMode.classList.add('hidden');
+                elements.resumeEditMode.classList.remove('hidden');
+            });
+            elements.resumeCancelBtn.addEventListener('click', () => {
+                elements.resumeEditor.value = opportunityData.generatedResume; // Revert changes
+                elements.resumeEditMode.classList.add('hidden');
+                elements.resumeDisplayMode.classList.remove('hidden');
+            });
+            elements.resumeSaveBtn.addEventListener('click', () => {
+                opportunityData.generatedResume = elements.resumeEditor.value;
+                elements.resumePreviewArea.innerHTML = marked.parse(opportunityData.generatedResume);
+                elements.resumeEditMode.classList.add('hidden');
+                elements.resumeDisplayMode.classList.remove('hidden');
+            });
+
+            // 4.4 Interview Practice Logic
+            elements.mainActionPractice.addEventListener('click', () => {
+                elements.practiceInitialBtn.classList.add('hidden');
+                elements.practiceLoadingState.classList.remove('hidden');
+                setTimeout(() => {
+                    if (opportunityData.generatedQA.length === 0) {
+                        opportunityData.generatedQA = [
+                            { q: '讲一个你参与过的最有挑战性的项目。', a: 'STAR原则...' },
+                            { q: '你会如何优化一个React应用的性能？', a: '我会从...' },
+                            { q: '你对我们公司有什么了解？', a: '我了解到贵公司...' }
+                        ];
+                        let qaHtml = opportunityData.generatedQA.map(item => `<div class="p-3 border-b last:border-b-0"><p class="font-semibold text-gray-800">${item.q}</p><p class="text-sm text-gray-600 mt-2">${item.a.replace(/\n/g, '<br>')}</p></div>`).join('');
+                        elements.qaPlaceholder.classList.add('hidden');
+                        elements.qaListContainer.innerHTML = qaHtml;
+                    }
+                    elements.practiceLoadingState.classList.add('hidden');
+                    elements.practiceConfirmState.classList.remove('hidden');
+                }, 1500);
+            });
+
+            elements.startPracticeBtn.addEventListener('click', () => {
+                currentQuestionIndex = 0;
+                displayQuestion(currentQuestionIndex);
+                elements.practiceOverlay.classList.remove('hidden');
+            });
+
+            function displayQuestion(index) {
+                elements.practiceQuestion.textContent = opportunityData.generatedQA[index].q;
+                elements.questionCounter.textContent = `${index + 1}/${opportunityData.generatedQA.length}`;
+                elements.practiceInitialState.classList.remove('hidden');
+                elements.practiceRecordingState.classList.add('hidden');
+                elements.practiceFeedbackState.classList.add('hidden');
+            }
+
+            elements.closePracticeBtn.addEventListener('click', () => elements.practiceOverlay.classList.add('hidden'));
+            elements.startRecordingBtn.addEventListener('click', () => {
+                elements.practiceInitialState.classList.add('hidden');
+                elements.practiceRecordingState.classList.remove('hidden');
+            });
+            elements.stopRecordingBtn.addEventListener('click', () => {
+                elements.practiceRecordingState.classList.add('hidden');
+                elements.practiceFeedbackState.classList.remove('hidden');
+                elements.aiFeedbackText.textContent = "模拟AI反馈：回答得不错，逻辑清晰。可以尝试补充更多数据来支撑你的论点。";
+            });
+            elements.nextQuestionBtn.addEventListener('click', () => {
+                currentQuestionIndex = (currentQuestionIndex + 1) % opportunityData.generatedQA.length;
+                displayQuestion(currentQuestionIndex);
+            });
+            elements.showAnswerBtn.addEventListener('click', () => {
+                alert("建议答案：\n" + opportunityData.generatedQA[currentQuestionIndex].a);
+            });
         });
-
-        saveBtn.addEventListener('click', () => {
-            const qaItems = qaListContainer.querySelectorAll('.qa-item');
-            const newQAData = Array.from(qaItems).map(item => ({
-                id: item.dataset.id,
-                q: item.querySelector('.question-input').value,
-                a: item.querySelector('.answer-input').value
-            }));
-            opportunityData.qa = newQAData;
-            saveBtn.textContent = '已保存!';
-            setTimeout(() => { saveBtn.textContent = '保存全部'; }, 2000);
-        });
-
-        qaListContainer.addEventListener('click', e => {
-            const toggleBtn = e.target.closest('.toggle-answer-btn');
-            if (toggleBtn) {
-                const answer = toggleBtn.closest('.qa-item').querySelector('.answer-content');
-                const icon = toggleBtn.querySelector('i');
-                const isHidden = answer.style.display === 'none';
-                answer.style.display = isHidden ? 'block' : 'none';
-                icon.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
-            }
-            const deleteBtn = e.target.closest('.delete-qa-btn');
-            if (deleteBtn) {
-                const idToDelete = deleteBtn.closest('.qa-item').dataset.id;
-                opportunityData.qa = opportunityData.qa.filter(item => item.id != idToDelete);
-                renderQAList();
-            }
-        });
-    }
-
-    function setupSwipeToBack() {
-        let touchstartX = 0;
-        const swipeThreshold = 100;
-        const edgeThreshold = 50;
-        document.body.addEventListener('touchstart', e => {
-            if (e.touches[0].clientX < edgeThreshold) {
-                touchstartX = e.changedTouches[0].screenX;
-            }
-        }, { passive: true });
-        document.body.addEventListener('touchend', e => {
-            if (touchstartX === 0) return;
-            const touchendX = e.changedTouches[0].screenX;
-            if (touchendX - touchstartX > swipeThreshold) {
-                // This needs to break out of the iframe.
-                window.top.location.href = 'index.html#interviews';
-            }
-            touchstartX = 0;
-        }, { passive: true });
-    }
-
-    // --- SCRIPT EXECUTION ---
-    setupTabs();
-    setupResumeTab();
-    setupQATab();
-    setupSwipeToBack();
-</script>
+    </script>
 </body>
 </html>
