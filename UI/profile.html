@@ -19,116 +19,59 @@
         </div>
     </div>
 
-    <div class="p-4 space-y-4">
-        <!-- Basic Information -->
-        <div class="bg-white p-4 rounded-xl shadow-sm">
-            <div class="flex justify-between items-center mb-3">
-                <h2 class="text-lg font-bold text-gray-700">基本信息</h2>
-                <button class="text-sm text-blue-500 font-semibold">编辑</button>
-            </div>
-            <div class="text-gray-700 text-sm space-y-2">
-                <p><i class="fa-solid fa-user w-5 text-gray-400"></i> 姓名: 张三</p>
-                <p><i class="fa-solid fa-flag w-5 text-gray-400"></i> 民族: 汉族</p>
-                <p><i class="fa-solid fa-cake-candles w-5 text-gray-400"></i> 出生年月: 2000-01-01</p>
-                <p><i class="fa-solid fa-handshake w-5 text-gray-400"></i> 政治面貌: 中共党员</p>
-                <p><i class="fa-solid fa-envelope w-5 text-gray-400"></i> 邮箱: zhangsan@email.com</p>
-                <p><i class="fa-solid fa-phone w-5 text-gray-400"></i> 电话: +86 138-1234-5678</p>
-            </div>
-        </div>
-
-        <!-- Education -->
-        <div class="bg-white p-4 rounded-xl shadow-sm">
-            <div class="flex justify-between items-center mb-3">
-                <h2 class="text-lg font-bold text-gray-700">教育背景</h2>
-                <button class="text-sm text-blue-500 font-semibold">编辑</button>
-            </div>
-            <div class="text-sm">
-                <p class="font-semibold text-gray-800">北京大学</p>
-                <p class="text-gray-600">信息科学技术学院 | 计算机科学硕士</p>
-                <p class="text-gray-400 mt-1">2022 - 2024</p>
-                <div class="mt-2 pt-2 border-t border-gray-100">
-                    <p class="text-gray-600"><span class="font-semibold">主修课程:</span> 算法设计、操作系统、计算机网络...</p>
-                    <p class="text-gray-600"><span class="font-semibold">成绩:</span> GPA 3.9/4.0 (专业前5%)</p>
+            <h1 class="mb-4">个人信息 Profile</h1>
+    
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">编辑个人信息</h5>
+                    <p class="card-text">请在下方文本框中输入您的个人简介（支持Markdown语法）。</p>
+                    <textarea class="form-control" id="profileMarkdown" rows="15">
+    # 张三
+    
+    ---
+    
+    ### 教育背景
+    - **X大学** - 计算机科学与技术 - 本科 (2020-2024)
+    - GPA: 3.8/4.0
+    
+    ### 实习经历
+    **ABC科技公司 - 前端开发实习生 (2023.06 - 2023.09)**
+    - 负责公司官网的日常维护和新功能开发。
+    - 使用 Vue.js 框架重构了用户个人中心页面，提升了页面加载速度和用户体验。
+    
+    ### 技能
+    - **编程语言**: JavaScript, Python
+    - **框架**: Vue.js, Flask
+    - **工具**: Git, VS Code
+                    </textarea>
+                    <button class="btn btn-primary mt-3">保存</button>
                 </div>
             </div>
-        </div>
-
-        <!-- Campus Experience -->
-        <div class="bg-white p-4 rounded-xl shadow-sm">
-            <div class="flex justify-between items-center mb-3">
-                <h2 class="text-lg font-bold text-gray-700">校园经历</h2>
-                <button class="text-sm text-blue-500 font-semibold">编辑</button>
-            </div>
-            <div class="text-sm">
-                <p class="font-semibold text-gray-800">校学生会 - 技术部部长</p>
-                <p class="text-gray-400 mt-1">2021 - 2022</p>
-                <p class="text-gray-600 mt-2">负责开发和维护学生会官方网站及小程序，组织技术培训。</p>
-            </div>
-        </div>
-
-        <!-- Internship Experience -->
-        <div class="bg-white p-4 rounded-xl shadow-sm">
-            <div class="flex justify-between items-center mb-3">
-                <h2 class="text-lg font-bold text-gray-700">实习与实践经历</h2>
-                <button class="text-sm text-blue-500 font-semibold">编辑</button>
-            </div>
-            <div class="text-sm">
-                <p class="font-semibold text-gray-800">软件工程师 (实习)</p>
-                <p class="text-gray-600">谷歌 (Google)</p>
-                <p class="text-gray-400 mt-1">2023.06 - 2023.08</p>
-                <p class="text-gray-600 mt-2">参与Google Photos后端服务开发，优化图片处理流程，性能提升15%。</p>
-            </div>
-        </div>
-
-        <!-- Project Experience -->
-        <div class="bg-white p-4 rounded-xl shadow-sm">
-            <div class="flex justify-between items-center mb-3">
-                <h2 class="text-lg font-bold text-gray-700">项目经历</h2>
-                <button class="text-sm text-blue-500 font-semibold">编辑</button>
-            </div>
-            <div class="text-sm">
-                <p class="font-semibold text-gray-800">AI面试管理系统 (个人项目)</p>
-                <p class="text-gray-400 mt-1">2023.09 - 至今</p>
-                <p class="text-gray-600 mt-2"><span class="font-semibold">技术栈:</span> Vue3, FastAPI, Docker</p>
-                <p class="text-gray-600 mt-1">独立设计并开发全栈应用，实现AI简历分析与模拟面试功能。</p>
-            </div>
-        </div>
-
-        <!-- Skills -->
-        <div class="bg-white p-4 rounded-xl shadow-sm">
-            <div class="flex justify-between items-center mb-3">
-                <h2 class="text-lg font-bold text-gray-700">技能与特长</h2>
-                <button class="text-sm text-blue-500 font-semibold">编辑</button>
-            </div>
-            <div class="text-sm space-y-2">
-                <p><span class="font-semibold w-16 inline-block">语言能力:</span> 英语六级, 普通话二甲</p>
-                <p><span class="font-semibold w-16 inline-block">编程语言:</span> Python, Java, JavaScript</p>
-                <p><span class="font-semibold w-16 inline-block">技术框架:</span> Vue.js, FastAPI, SpringBoot</p>
-            </div>
-        </div>
-
-        <!-- Awards -->
-        <div class="bg-white p-4 rounded-xl shadow-sm">
-            <div class="flex justify-between items-center mb-3">
-                <h2 class="text-lg font-bold text-gray-700">奖项与证书</h2>
-                <button class="text-sm text-blue-500 font-semibold">编辑</button>
-            </div>
-            <div class="text-sm space-y-2">
-                <p class="text-gray-600"><i class="fa-solid fa-award w-5 text-amber-500"></i> 国家奖学金 (2023)</p>
-                <p class="text-gray-600"><i class="fa-solid fa-award w-5 text-amber-500"></i> ACM-ICPC亚洲区银牌 (2022)</p>
-            </div>
-        </div>
-
-        <!-- Self-assessment -->
-        <div class="bg-white p-4 rounded-xl shadow-sm">
-            <div class="flex justify-between items-center mb-3">
-                <h2 class="text-lg font-bold text-gray-700">自我评价</h2>
-                <button class="text-sm text-blue-500 font-semibold">编辑</button>
-            </div>
-            <p class="text-sm text-gray-600 leading-relaxed">
-                具备扎实的编程基础和良好的编码规范，对新技术有强烈的学习热情。拥有团队合作精神，善于沟通，能快速融入团队并承担责任。
-            </p>
-        </div>
-    </div>
-</body>
+    
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h5 class="card-title">预览效果</h5>
+                    <div class="p-3 border rounded bg-light">
+                        <h1>张三</h1>
+                        <hr>
+                        <h3>教育背景</h3>
+                        <ul>
+                            <li><strong>X大学</strong> - 计算机科学与技术 - 本科 (2020-2024)</li>
+                            <li>GPA: 3.8/4.0</li>
+                        </ul>
+                        <h3>实习经历</h3>
+                        <p><strong>ABC科技公司 - 前端开发实习生 (2023.06 - 2023.09)</strong></p>
+                        <ul>
+                            <li>负责公司官网的日常维护和新功能开发。</li>
+                            <li>使用 Vue.js 框架重构了用户个人中心页面，提升了页面加载速度和用户体验。</li>
+                        </ul>
+                        <h3>技能</h3>
+                        <ul>
+                            <li><strong>编程语言</strong>: JavaScript, Python</li>
+                            <li><strong>框架</strong>: Vue.js, Flask</li>
+                            <li><strong>工具</strong>: Git, VS Code</li>
+                        </ul>
+                    </div>
+                </div>
+            </div></body>
 </html>
