@@ -81,9 +81,10 @@
                 <button class="secondary-tab active whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm" data-tab="details">职位详情</button>
                 <button class="secondary-tab whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500" data-tab="resume">简历详情</button>
                 <button class="secondary-tab whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500" data-tab="qa">问答详情</button>
+                <button class="secondary-tab whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500" data-tab="report">评估报告</button>
             </nav>
         </div>
-        <div class="mt-4 bg-white p-4 rounded-xl shadow-sm">
+        <div class="mt-4 bg-white p-4 rounded-xl shadow-sm min-h-[400px]">
             <div id="tab-details" class="tab-content space-y-4">
                 <h3 class="font-bold text-gray-700 mb-2">岗位描述 (JD)</h3>
                 <p id="opportunity-jd" class="text-sm text-gray-600 leading-relaxed whitespace-pre-line"></p>
@@ -115,6 +116,41 @@
                 </div>
                 <p id="qa-placeholder" class="text-gray-400 p-4 text-center">尚未生成问答。请点击上方的“AI进行面试演练”按钮开始。</p>
                 <div id="qa-list-container" class="space-y-4"></div>
+            </div>
+            <div id="tab-report" class="tab-content hidden">
+                <div id="report-placeholder">
+                    <p class="text-gray-400 p-4 text-center">尚未进行面试演练，暂无评估报告。</p>
+                </div>
+                <div id="report-content-container" class="hidden space-y-6">
+                    <!-- Overall Score -->
+                    <div class="text-center">
+                        <p class="text-sm text-gray-500">综合评分</p>
+                        <p id="report-score" class="text-6xl font-bold text-blue-600">88</p>
+                    </div>
+                    <!-- Radar Chart -->
+                    <div class="h-56">
+                        <svg id="report-radar-chart" viewBox="0 0 200 200" class="w-full h-full"></svg>
+                    </div>
+                    <!-- Overall Feedback -->
+                    <div>
+                        <h3 class="font-bold text-gray-700 mb-2">整体评价</h3>
+                        <p id="report-feedback" class="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">本次面试表现出色，沟通流畅，技术知识扎实。在回答关于项目挑战的问题时，可以更多地使用STAR原则来构建回答，使逻辑更清晰。</p>
+                    </div>
+                    <!-- History -->
+                    <div>
+                        <h3 class="font-bold text-gray-700 mb-2">历史记录</h3>
+                        <div id="report-history-list" class="space-y-2">
+                            <div class="flex justify-between items-center bg-gray-50 p-2 rounded-lg text-sm">
+                                <span><i class="fas fa-history mr-2 text-gray-400"></i>2024年5月20日 模拟面试</span>
+                                <span class="font-semibold text-blue-600">88分</span>
+                            </div>
+                            <div class="flex justify-between items-center bg-gray-50 p-2 rounded-lg text-sm">
+                                <span><i class="fas fa-history mr-2 text-gray-400"></i>2024年5月18日 模拟面试</span>
+                                <span class="font-semibold text-gray-500">75分</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -168,12 +204,14 @@
                 company: params.get('company') || '公司信息',
                 jd: params.get('jd') || '未能加载岗位描述。',
                 generatedResume: null,
-                generatedQA: []
+                generatedQA: [],
+                interviewHistory: []
             };
             let currentQuestionIndex = 0;
 
             // --- 2. DOM ELEMENTS ---
             const getEl = (id) => document.getElementById(id);
+            const queryEl = (sel) => document.querySelector(sel);
             const queryElAll = (sel) => document.querySelectorAll(sel);
             const elements = {
                 title: getEl('opportunity-title'),
@@ -206,6 +244,9 @@
                 qaListContainer: getEl('qa-list-container'),
                 addQaBtn: getEl('add-qa-btn'),
                 saveQaBtn: getEl('save-qa-btn'),
+                reportPlaceholder: getEl('report-placeholder'),
+                reportContentContainer: getEl('report-content-container'),
+                reportRadarChart: getEl('report-radar-chart'),
                 closePracticeBtn: getEl('close-practice-btn'),
                 practiceQuestion: getEl('practice-question'),
                 questionCounter: getEl('question-counter'),
@@ -229,6 +270,11 @@
                 // This is a simplified toast function for the prototype
                 alert(message);
             };
+            
+            const activateTab = (tabName) => {
+                const tabButton = queryEl(`.secondary-tab[data-tab='${tabName}']`);
+                if (tabButton) tabButton.click();
+            }
 
             // 4.1 Secondary Tabs Logic
             elements.secondaryTabs.forEach(button => {
@@ -332,7 +378,42 @@
                 }
             });
 
-            // 4.5 Interview Practice Logic
+            // 4.5 Interview Practice & Report Logic
+            function renderRadarChart() {
+                // This is a mock radar chart rendering
+                elements.reportRadarChart.innerHTML = `
+                    <defs>
+                        <linearGradient id="radarGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" style="stop-color:rgba(59, 130, 246, 0.4)" />
+                            <stop offset="100%" style="stop-color:rgba(59, 130, 246, 0.1)" />
+                        </linearGradient>
+                    </defs>
+                    <g transform="translate(100,100)">
+                        <polygon points="0,-80 76.1,-24.7 47.0,64.7 -47.0,64.7 -76.1,-24.7" fill="none" stroke="#e5e7eb" stroke-width="1"/>
+                        <polygon points="0,-60 57.1,-18.5 35.3,48.5 -35.3,48.5 -57.1,-18.5" fill="none" stroke="#e5e7eb" stroke-width="1"/>
+                        <polygon points="0,-40 38.0,-12.3 23.5,32.3 -23.5,32.3 -38.0,-12.3" fill="none" stroke="#e5e7eb" stroke-width="1"/>
+                        <polygon points="0,-20 19.0,-6.2 11.8,16.2 -11.8,16.2 -19.0,-6.2" fill="none" stroke="#e5e7eb" stroke-width="1"/>
+                        <line x1="0" y1="0" x2="0" y2="-80" stroke="#e5e7eb" stroke-width="1"/><line x1="0" y1="0" x2="76.1" y2="-24.7" stroke="#e5e7eb" stroke-width="1"/><line x1="0" y1="0" x2="47.0" y2="64.7" stroke="#e5e7eb" stroke-width="1"/><line x1="0" y1="0" x2="-47.0" y2="64.7" stroke="#e5e7eb" stroke-width="1"/><line x1="0" y1="0" x2="-76.1" y2="-24.7" stroke="#e5e7eb" stroke-width="1"/>
+                        <polygon points="0,-72 68.5,-22.2 28.2,38.8 -42.3,58.2 -57.1,-18.5" fill="url(#radarGradient)" stroke="#3B82F6" stroke-width="2"/>
+                        <text x="0" y="-88" text-anchor="middle" font-size="10" fill="#4b5563">沟通能力</text>
+                        <text x="85" y="-22" text-anchor="start" font-size="10" fill="#4b5563">岗位匹配</text>
+                        <text x="52" y="78" text-anchor="middle" font-size="10" fill="#4b5563">逻辑思维</text>
+                        <text x="-52" y="78" text-anchor="middle" font-size="10" fill="#4b5563">技术深度</text>
+                        <text x="-85" y="-22" text-anchor="end" font-size="10" fill="#4b5563">STAR原则</text>
+                    </g>`;
+            }
+
+            function finishInterview() {
+                elements.practiceOverlay.classList.add('hidden');
+                showToast("面试完成！正在生成评估报告...");
+                setTimeout(() => {
+                    elements.reportPlaceholder.classList.add('hidden');
+                    elements.reportContentContainer.classList.remove('hidden');
+                    renderRadarChart();
+                    activateTab('report');
+                }, 1000);
+            }
+
             elements.mainActionPractice.addEventListener('click', () => {
                 elements.practiceInitialBtn.classList.add('hidden');
                 elements.practiceLoadingState.classList.remove('hidden');
@@ -349,17 +430,28 @@
                     elements.practiceConfirmState.classList.remove('hidden');
                 }, 1500);
             });
+
             elements.startPracticeBtn.addEventListener('click', () => {
                 currentQuestionIndex = 0;
                 displayQuestion(currentQuestionIndex);
                 elements.practiceOverlay.classList.remove('hidden');
             });
+
             function displayQuestion(index) {
                 elements.practiceQuestion.textContent = opportunityData.generatedQA[index].q;
                 elements.questionCounter.textContent = `${index + 1}/${opportunityData.generatedQA.length}`;
                 elements.practiceInitialState.classList.remove('hidden');
                 elements.practiceRecordingState.classList.add('hidden');
                 elements.practiceFeedbackState.classList.add('hidden');
+                
+                // Update button for last question
+                if (index === opportunityData.generatedQA.length - 1) {
+                    elements.nextQuestionBtn.textContent = '完成面试，查看评估';
+                    elements.nextQuestionBtn.classList.replace('bg-blue-600', 'bg-green-600');
+                } else {
+                    elements.nextQuestionBtn.textContent = '下一题 →';
+                    elements.nextQuestionBtn.classList.replace('bg-green-600', 'bg-blue-600');
+                }
             }
             elements.closePracticeBtn.addEventListener('click', () => elements.practiceOverlay.classList.add('hidden'));
             elements.startRecordingBtn.addEventListener('click', () => {
@@ -372,8 +464,12 @@
                 elements.aiFeedbackText.textContent = "模拟AI反馈：回答得不错，逻辑清晰。可以尝试补充更多数据来支撑你的论点。";
             });
             elements.nextQuestionBtn.addEventListener('click', () => {
-                currentQuestionIndex = (currentQuestionIndex + 1) % opportunityData.generatedQA.length;
-                displayQuestion(currentQuestionIndex);
+                if (currentQuestionIndex === opportunityData.generatedQA.length - 1) {
+                    finishInterview();
+                } else {
+                    currentQuestionIndex++;
+                    displayQuestion(currentQuestionIndex);
+                }
             });
             elements.showAnswerBtn.addEventListener('click', () => {
                 alert("建议答案：\n" + opportunityData.generatedQA[currentQuestionIndex].a);

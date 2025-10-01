@@ -33,7 +33,7 @@
 | `avatar_url` | `VARCHAR(255)` | 用户头像URL |
 | `profile_content` | `TEXT` | Markdown格式的完整个人信息 |
 
-#### 3. `opportunities` (机会信息表)
+#### 2. `opportunities` (机会信息表)
 | 字段名 (Field) | 类型 (Type) | 描述 (Description) |
 | :--- | :--- | :--- |
 | `id` | `INTEGER` | 主键, 自增 |
@@ -45,20 +45,41 @@
 | `status` | `VARCHAR(50)` | 投递状态 (驱动UI，如: 面试中) |
 | `latest_progress` | `VARCHAR(255)` | **可选**: 用户手动填写的最新进展备注 (如: 等待二面通知) |
 
-#### 4. `generated_resumes` (AI生成简历表)
+#### 3. `generated_resumes` (AI生成简历表)
 | 字段名 (Field) | 类型 (Type) | 描述 (Description) |
 | :--- | :--- | :--- |
 | `id` | `INTEGER` | 主键, 自增 |
 | `opportunity_id` | `RELATION` | 关联到 `opportunities` 表 |
 | `content_md` | `TEXT` | Markdown格式的简历内容 |
 
-#### 5. `generated_qas` (AI生成问答表)
+#### 4. `predicted_qas` (AI预测问答表)
 | 字段名 (Field) | 类型 (Type) | 描述 (Description) |
 | :--- | :--- | :--- |
 | `id` | `INTEGER` | 主键, 自增 |
 | `opportunity_id` | `RELATION` | 关联到 `opportunities` 表 |
-| `question` | `TEXT` | 面试问题 |
-| `answer` | `TEXT` | 回答建议 |
+| `question` | `TEXT` | 预测的面试问题 |
+| `suggested_answer` | `TEXT` | 针对该问题的回答建议 |
+
+#### 5. `interview_sessions` (面试评估会话表)
+| 字段名 (Field) | 类型 (Type) | 描述 (Description) |
+| :--- | :--- | :--- |
+| `id` | `INTEGER` | 主键, 自增 |
+| `opportunity_id` | `RELATION` | 关联到 `opportunities` 表 |
+| `session_date` | `DATETIME` | 面试进行的日期 |
+| `overall_score` | `INTEGER` | AI综合评分 |
+| `report_summary` | `TEXT` | AI生成的整体评价 |
+| `radar_chart_data`| `JSON` | 用于渲染雷达图的维度与分值 |
+
+#### 6. `session_answers` (会话问答记录表)
+| 字段名 (Field) | 类型 (Type) | 描述 (Description) |
+| :--- | :--- | :--- |
+| `id` | `INTEGER` | 主键, 自增 |
+| `session_id` | `RELATION` | 关联到 `interview_sessions` 表 |
+| `question_text` | `TEXT` | 本次会话中实际问到的问题 |
+| `suggested_answer`| `TEXT` | 针对这个问题的建议答案 |
+| `user_answer_transcript` | `TEXT` | 用户的回答（录音转文字） |
+| `ai_feedback` | `TEXT` | AI对这个单题回答的反馈 |
+| `user_audio_url`| `VARCHAR(255)`| 可选：用户回答的录音文件URL |
 
 ---
 
@@ -86,10 +107,11 @@
 | 模块 | 任务描述 | 负责人 |
 | :--- | :--- | :--- |
 | **机会管理交互** | - 实现“机会”页面的左滑编辑/删除、添加/编辑弹窗等复杂交互逻辑。 | 前端开发 |
-| **AI能力接口** | - **核心**: 编写**模拟AI服务接口**，预置高质量的简历和问答内容，确保演示效果。 | 后端开发 |
-| **机会详情页** | - 开发“机会详情”页的UI，包括Tab切换、Markdown内容展示、问答折叠列表等。 | 前端开发 |
-| **前后端对接** | - 将详情页的“生成”按钮与后端的模拟AI接口进行绑定，实现数据加载与保存。 | 前端开发 & 后端开发 |
-| **功能自测** | - 对添加机会、使用AI工具等核心演示流程进行反复测试，确保流程无Bug。 | 前端开发 & 后端开发 |
+| **AI能力接口** | - **核心**: 编写**模拟AI服务接口**，预置高质量的简历、问答及**评估报告**内容。 | 后端开发 |
+| **机会详情页** | - 开发“机会详情”页的UI，包括Tab切换、Markdown内容展示、问答列表等。 | 前端开发 |
+| **面试演练闭环** | - 实现“面试演练”的完整流程：从开始、回答、到**最终生成评估报告**。 | 前端开发 |
+| **前后端对接** | - 将详情页的AI功能按钮与后端的模拟AI接口进行绑定，实现数据加载与保存。 | 前端开发 & 后端开发 |
+| **功能自测** | - 对添加机会、使用AI工具、完成面试演练等核心演示流程进行反复测试。 | 前端开发 & 后端开发 |
 
 ---
 
@@ -99,7 +121,7 @@
 
 | 模块 | 任务描述 | 负责人 |
 | :--- | :--- | :--- |
-| **UI/UX优化** | - 整体检查应用的视觉一致性，优化动画效果、边距、字体等细节。 | 前端开发 |
-| **数据与脚本** | - 准备1-2个完整、高质量的演示案例数据，并确认演示脚本。 | 后端开发 |
+| **UI/UX优化** | - 整体检查应用的视觉一致性，优化**评估报告页**、动画效果、边距等细节。 | 前端开发 |
+| **数据与脚本** | - 准备1-2个完整、高质量的演示案例数据（包含最终评估报告），并确认演示脚本。 | 后端开发 |
 | **演示与文档** | - 准备最终的演示PPT、演讲稿和项目介绍文档。 | 指导老师 |
 | **环境与支持** | - 确保演示环境的稳定，并随时准备解决现场可能出现的技术问题。 | 指导老师, 前端开发 & 后端开发 |
