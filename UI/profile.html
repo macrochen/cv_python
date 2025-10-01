@@ -7,11 +7,18 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <style>
         body { background-color: #f8f9fa; }
+        /* Simple styles for rendered markdown to override Tailwind's reset */
+        #previewArea h1 { font-size: 2.25rem; line-height: 2.5rem; font-weight: 700; margin-bottom: 1rem; }
+        #previewArea h3 { font-size: 1.5rem; line-height: 2rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 1rem; }
+        #previewArea ul { list-style-type: disc; padding-left: 2rem; margin-bottom: 1rem; }
+        #previewArea p { margin-bottom: 1rem; }
+        #previewArea hr { margin-top: 2rem; margin-bottom: 2rem; border-color: #e5e7eb; }
+        #previewArea strong { font-weight: 700; }
     </style>
 </head>
 <body class="pb-20">
     <!-- Profile Header -->
-    <div class="bg-white pb-4">
+    <div class="bg-white pb-4 shadow-sm">
         <div class="p-4 pt-6 flex flex-col items-center">
             <img class="h-24 w-24 rounded-full object-cover shadow-md" src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1888&auto=format&fit=crop" alt="用户头像">
             <h1 class="mt-4 text-2xl font-bold text-gray-800">张三</h1>
@@ -19,59 +26,70 @@
         </div>
     </div>
 
-            <h1 class="mb-4">个人信息 Profile</h1>
-    
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">编辑个人信息</h5>
-                    <p class="card-text">请在下方文本框中输入您的个人简介（支持Markdown语法）。</p>
-                    <textarea class="form-control" id="profileMarkdown" rows="15">
-    # 张三
-    
-    ---
-    
-    ### 教育背景
-    - **X大学** - 计算机科学与技术 - 本科 (2020-2024)
-    - GPA: 3.8/4.0
-    
-    ### 实习经历
-    **ABC科技公司 - 前端开发实习生 (2023.06 - 2023.09)**
-    - 负责公司官网的日常维护和新功能开发。
-    - 使用 Vue.js 框架重构了用户个人中心页面，提升了页面加载速度和用户体验。
-    
-    ### 技能
-    - **编程语言**: JavaScript, Python
-    - **框架**: Vue.js, Flask
-    - **工具**: Git, VS Code
-                    </textarea>
-                    <button class="btn btn-primary mt-3">保存</button>
+    <div class="container mx-auto p-4">
+
+        <!-- Display Mode -->
+        <div id="displayMode">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-gray-800">个人信息</h2>
+                    <button id="editButton" class="bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition-colors duration-200">编辑</button>
+                </div>
+                <div id="previewArea" class="p-4 border border-gray-200 rounded bg-gray-50 min-h-[200px]">
+                    <!-- Rendered content appears here -->
                 </div>
             </div>
-    
-            <div class="card mt-4">
-                <div class="card-body">
-                    <h5 class="card-title">预览效果</h5>
-                    <div class="p-3 border rounded bg-light">
-                        <h1>张三</h1>
-                        <hr>
-                        <h3>教育背景</h3>
-                        <ul>
-                            <li><strong>X大学</strong> - 计算机科学与技术 - 本科 (2020-2024)</li>
-                            <li>GPA: 3.8/4.0</li>
-                        </ul>
-                        <h3>实习经历</h3>
-                        <p><strong>ABC科技公司 - 前端开发实习生 (2023.06 - 2023.09)</strong></p>
-                        <ul>
-                            <li>负责公司官网的日常维护和新功能开发。</li>
-                            <li>使用 Vue.js 框架重构了用户个人中心页面，提升了页面加载速度和用户体验。</li>
-                        </ul>
-                        <h3>技能</h3>
-                        <ul>
-                            <li><strong>编程语言</strong>: JavaScript, Python</li>
-                            <li><strong>框架</strong>: Vue.js, Flask</li>
-                            <li><strong>工具</strong>: Git, VS Code</li>
-                        </ul>
-                    </div>
+        </div>
+
+        <!-- Edit Mode (Initially Hidden) -->
+        <div id="editMode" class="hidden">
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-gray-800">编辑个人信息</h2>
+                    <button id="saveButton" class="bg-green-600 text-white font-bold py-2 px-4 rounded hover:bg-green-700 transition-colors duration-200">保存</button>
                 </div>
-            </div></body>
+                <textarea id="profileMarkdown" class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500" rows="20"></textarea>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        // --- ELEMENTS ---
+        const displayMode = document.getElementById('displayMode');
+        const editMode = document.getElementById('editMode');
+        const editButton = document.getElementById('editButton');
+        const saveButton = document.getElementById('saveButton');
+        const editor = document.getElementById('profileMarkdown');
+        const preview = document.getElementById('previewArea');
+
+        // --- DATA ---
+        const initialContent = `# 张三\n\n---\n\n### 教育背景\n- **X大学** - 计算机科学与技术 - 本科 (2020-2024)\n- GPA: 3.8/4.0\n\n### 实习经历\n**ABC科技公司 - 前端开发实习生 (2023.06 - 2023.09)**\n- 负责公司官网的日常维护和新功能开发。\n- 使用 Vue.js 框架重构了用户个人中心页面，提升了页面加载速度和用户体验。\n\n### 技能\n- **编程语言**: JavaScript, Python\n- **框架**: Vue.js, Flask\n- **工具**: Git, VS Code`;
+        editor.value = initialContent;
+
+        // --- FUNCTIONS ---
+        const renderMarkdown = () => {
+            preview.innerHTML = marked.parse(editor.value);
+        };
+
+        const switchToEditMode = () => {
+            displayMode.classList.add('hidden');
+            editMode.classList.remove('hidden');
+        };
+
+        const switchToDisplayMode = () => {
+            renderMarkdown(); // Update the preview with latest content
+            editMode.classList.add('hidden');
+            displayMode.classList.remove('hidden');
+        };
+
+        // --- EVENT LISTENERS ---
+        editButton.addEventListener('click', switchToEditMode);
+        saveButton.addEventListener('click', switchToDisplayMode);
+
+        // --- INITIAL RENDER ---
+        document.addEventListener('DOMContentLoaded', renderMarkdown);
+    </script>
+</body>
 </html>
