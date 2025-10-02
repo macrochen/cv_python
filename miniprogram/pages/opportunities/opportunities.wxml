@@ -19,7 +19,7 @@
             <text>{{item.company_name}}</text>
           </view>
           <view class="card-footer">
-            <text class="date-text">更新于: {{item.updated_at}}</text>
+            <text class="footer-text" decode="{{true}}">{{item.displayProgress}}</text>
           </view>
         </view>
       </view>
@@ -27,7 +27,46 @@
   </view>
 
   <!-- Centered Floating Action Button -->
-  <view class="fab-add-center">
+  <view class="fab-add-center" bindtap="showAddModal">
     <text class="fab-icon">+</text>
+  </view>
+
+  <!-- Add/Edit Opportunity Modal -->
+  <view wx:if="{{isModalVisible}}" class="modal-backdrop" bindtap="hideModal">
+    <view class="modal-panel" catchtap="doNothing">
+      <form bindsubmit="handleSaveOpportunity">
+        <view class="modal-header">
+          <text class="modal-title">添加新机会</text>
+        </view>
+        <view class="modal-body">
+          <view class="form-group">
+            <label class="form-label">公司名称*</label>
+            <input name="company_name" class="form-input" placeholder="请输入公司名称" />
+          </view>
+          <view class="form-group">
+            <label class="form-label">职位名称*</label>
+            <input name="position_name" class="form-input" placeholder="请输入职位名称" />
+          </view>
+          <view class="form-group">
+            <label class="form-label">投递状态</label>
+            <picker name="status" mode="selector" range="{{statusOptions}}" value="{{selectedStatusIndex}}" bindchange="bindStatusChange">
+              <view class="picker-view">{{statusOptions[selectedStatusIndex]}}</view>
+            </picker>
+          </view>
+          <view class="form-group">
+            <label class="form-label">最新进展 (选填)</label>
+            <input name="latest_progress" class="form-input" placeholder="例如: 等待二面通知" />
+          </view>
+          <view class="form-group">
+            <label class="form-label">岗位描述 (选填)</label>
+            <textarea name="job_description" class="form-textarea" placeholder="请在此处粘贴岗位描述..."></textarea>
+          </view>
+        </view>
+        <view class="modal-footer">
+          <button class="modal-button cancel" bindtap="hideModal">取消</button>
+          <button class="modal-button save" form-type="submit">保存</button>
+        </view>
+      </form>
+    </view>
   </view>
 </view>

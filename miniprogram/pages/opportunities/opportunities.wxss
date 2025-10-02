@@ -84,9 +84,9 @@ page {
   padding-top: 16rpx;
 }
 
-.date-text {
-  font-size: 24rpx;
-  color: #9ca3af; /* gray-400 */
+.footer-text {
+  font-size: 26rpx;
+  color: #6b7280; /* gray-500 */
 }
 
 /* --- Status Badge (New Style) --- */
@@ -143,4 +143,117 @@ page {
   font-size: 60rpx;
   font-weight: 300;
   line-height: 100rpx; /* Center the plus sign */
+}
+
+/* --- Add/Edit Modal --- */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-panel {
+  width: 90%;
+  max-width: 700rpx;
+  background-color: #fff;
+  border-radius: 24rpx;
+  box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  padding: 32rpx;
+  border-bottom: 1rpx solid #e5e7eb;
+}
+
+.modal-title {
+  font-size: 36rpx;
+  font-weight: bold;
+  text-align: center;
+}
+
+.modal-body {
+  padding: 32rpx;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.form-group {
+  margin-bottom: 24rpx;
+}
+
+.form-label {
+  font-size: 28rpx;
+  color: #374151;
+  margin-bottom: 12rpx;
+  display: block;
+}
+
+.form-input {
+  width: 100%;
+  padding: 16rpx 24rpx;
+  min-height: 70rpx;
+  border: 1rpx solid #d1d5db;
+  border-radius: 12rpx;
+  font-size: 32rpx;
+  box-sizing: border-box;
+}
+
+.picker-view {
+  width: 100%;
+  padding: 0 24rpx;
+  min-height: 70rpx;
+  border: 1rpx solid #d1d5db;
+  border-radius: 12rpx;
+  font-size: 32rpx;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+}
+
+.form-textarea {
+  width: 100%;
+  padding: 16rpx;
+  border: 1rpx solid #d1d5db;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  box-sizing: border-box;
+  min-height: 160rpx;
+}
+
+.modal-footer {
+  display: flex;
+  border-top: 1rpx solid #e5e7eb;
+}
+
+.modal-button {
+  flex: 1;
+  padding: 24rpx;
+  font-size: 32rpx;
+  font-weight: 500;
+  text-align: center;
+  border-radius: 0;
+}
+
+.modal-button.cancel {
+  color: #4b5563;
+  border-bottom-left-radius: 24rpx;
+}
+
+.modal-button.save {
+  background-color: #16a34a;
+  color: #fff;
+  border-bottom-right-radius: 24rpx;
+}
+
+.modal-button::after {
+  border: none; /* Remove default button borders */
 }
