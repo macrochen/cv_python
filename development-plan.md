@@ -164,7 +164,7 @@
 
 #### 6.2 后端实现策略 (Python Flask)
 
-*   **API开发**: 采用Python Flask框架，结合轻量级ORM（如SQLAlchemy）进行API接口开发。数据库将使用 **SQLite 内存数据库**，简化部署，每次应用重启数据会重置，符合Demo特性。
+*   **API开发**: 采用Python Flask框架，结合轻量级ORM（如SQLAlchemy）进行API接口开发。数据库将使用 **SQLite 文件数据库 (interview.db)**，数据将持久化存储，确保应用重启后数据不丢失，更符合真实应用场景。
 *   **AI模型接口集成**: 实际的LLM（大型语言模型）API调用（如Gemini API、OpenAI API）将在生产环境中实现。在原型阶段，所有涉及AI的接口将返回**预设的模拟数据**或通过简单的逻辑（如 `time.sleep()`）模拟耗时操作，以确保演示时AI响应的即时性和可控性。
 
 #### 6.3 前端实现策略 (HTML/CSS/JS for Prototype)

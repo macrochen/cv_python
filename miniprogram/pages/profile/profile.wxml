@@ -1,30 +1,39 @@
-<!--pages/profile/profile.wxml-->
-<view class="container">
+<view class="profile-page-container {{isEditing ? 'edit-mode-active' : ''}}">
   <!-- Save Success Toast -->
-  <view wx:if="{{showToast}}" class="weui-toptips weui-toptips_warn" style="background-color: #07c160;">
-    {{toastMessage}}
+  <view wx:if="{{showToast}}" class="toast">
+    <text>{{toastMessage}}</text>
   </view>
 
   <!-- Profile Header -->
-  <view class="profile-header">
-    <image class="avatar" src="{{userInfo.avatar_url}}" mode="aspectFill"></image>
-    <text class="user-name">{{userInfo.name}}</text>
-    <button wx:if="{{!isEditing}}" class="edit-button" bindtap="editProfile">编辑资料</button>
-  </view>
-
-  <!-- Display Mode -->
-  <view wx:if="{{!isEditing}}" class="display-mode">
-    <view class="weui-article">
-      <rich-text nodes="{{renderedProfileContent}}"></rich-text>
+  <view wx:if="{{!isEditing}}" class="profile-header-section">
+    <view class="profile-header-content">
+      <image class="avatar" src="{{userInfo.avatar_url || 'https://via.placeholder.com/150'}}" mode="aspectFill"></image>
+      <text class="username">{{userInfo.name || '未登录'}}</text>
+      <button class="edit-button" bindtap="editProfile">编辑资料</button>
     </view>
   </view>
 
-  <!-- Edit Mode -->
-  <view wx:if="{{isEditing}}" class="edit-mode">
-    <textarea class="profile-textarea" value="{{profileContent}}" bindinput="onProfileContentInput" auto-focus placeholder="请输入您的个人资料 (Markdown 格式)"></textarea>
-    <view class="button-group">
-      <button class="weui-btn weui-btn_default" bindtap="cancelEdit">取消</button>
-      <button class="weui-btn weui-btn_primary" bindtap="saveProfile">保存</button>
+  <view class="content-area">
+    <!-- Display Mode -->
+    <view wx:if="{{!isEditing}}" class="display-mode">
+      <view class="card">
+        <view class="preview-area">
+          <towxml nodes="{{renderedMarkdown}}"/>
+        </view>
+      </view>
     </view>
+
+    <!-- Edit Mode -->
+    <block wx:if="{{isEditing}}">
+      <view class="card">
+        <textarea id="profileMarkdown" class="profile-markdown-editor" value="{{editedContent}}" bindinput="onEditorInput" auto-height placeholder="请输入个人简介 (支持Markdown)" maxlength="20000"></textarea>
+      </view>
+    </block>
+  </view>
+
+  <!-- Sticky buttons, only shown in edit mode -->
+  <view wx:if="{{isEditing}}" class="sticky-button-group">
+    <button class="cancel-button" bindtap="cancelEdit">取消</button>
+    <button class="save-button" bindtap="saveProfile">保存</button>
   </view>
 </view>

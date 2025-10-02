@@ -5,8 +5,9 @@ from datetime import datetime
 
 app = Flask(__name__)
 
-# Configure in-memory SQLite database for prototyping
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+# Configure persistent SQLite database
+basedir = os.path.abspath(os.path.dirname(__file__))
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'interview.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -63,7 +64,7 @@ class Opportunity(db.Model):
             'updated_at': self.updated_at.isoformat()
         }
 
-# Create database tables
+# Create database tables (original place)
 with app.app_context():
     db.create_all()
 
@@ -72,8 +73,10 @@ with app.app_context():
 def create_or_update_user():
     data = request.get_json()
     openid = data.get('openid')
+
     name = data.get('name')
     avatar_url = data.get('avatar_url')
+    profile_content = data.get('profile_content')
 
     if not openid:
         return jsonify({'error': 'OpenID is required'}), 400
@@ -81,13 +84,22 @@ def create_or_update_user():
     user = User.query.filter_by(openid=openid).first()
     if user:
         # Update existing user
-        user.name = name
-        user.avatar_url = avatar_url
+        if name is not None:
+            user.name = name
+        if avatar_url is not None:
+            user.avatar_url = avatar_url
+        if profile_content is not None:
+            user.profile_content = profile_content
         db.session.commit()
         return jsonify(user.to_dict()), 200
     else:
-        # Create new user
-        new_user = User(openid=openid, name=name, avatar_url=avatar_url, profile_content="")
+        # Create new user with provided data or defaults
+        new_user = User(
+            openid=openid,
+            name=name if name is not None else "新用户",
+            avatar_url=avatar_url if avatar_url is not None else "https://via.placeholder.com/150",
+            profile_content=profile_content if profile_content is not None else ""
+        )
         db.session.add(new_user)
         db.session.commit()
         return jsonify(new_user.to_dict()), 201
@@ -108,7 +120,9 @@ def update_user_profile(openid):
     data = request.get_json()
     profile_content = data.get('profile_content')
 
-    if profile_content is None: # Allow empty string to be set
+    print(f"Received profile_content with length: {len(profile_content)}")
+
+    if profile_content is None:
         return jsonify({'error': 'profile_content is required'}), 400
 
     user.profile_content = profile_content

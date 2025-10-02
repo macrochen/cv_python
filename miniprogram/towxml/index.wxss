@@ -1,0 +1,42 @@
+/* miniprogram/towxml/index.wxss */
+/* Basic styles for towxml component */
+.towxml_view h1 {
+  font-size: 48rpx; /* 2.25rem */
+  line-height: 56rpx; /* 2.5rem */
+  font-weight: 700;
+  margin-bottom: 20rpx; /* 1rem */
+}
+.towxml_view h2 {
+  font-size: 40rpx; /* 2rem */
+  line-height: 48rpx; /* 2.25rem */
+  font-weight: 600;
+  margin-top: 30rpx; /* 1.5rem */
+  margin-bottom: 20rpx; /* 1rem */
+}
+.towxml_view h3 {
+  font-size: 32rpx; /* 1.5rem */
+  line-height: 40rpx; /* 2rem */
+  font-weight: 600;
+  margin-top: 30rpx; /* 1.5rem */
+  margin-bottom: 20rpx; /* 1rem */
+}
+.towxml_view ul {
+  list-style-type: disc;
+  padding-left: 40rpx; /* 2rem */
+  margin-bottom: 20rpx; /* 1rem */
+}
+.towxml_view li {
+  margin-bottom: 10rpx; /* 0.5rem */
+}
+.towxml_view p {
+  margin-bottom: 20rpx; /* 1rem */
+}
+.towxml_view hr {
+  margin-top: 40rpx; /* 2rem */
+  margin-bottom: 40rpx; /* 2rem */
+  border-color: #e5e7eb;
+  border-width: 1rpx;
+}
+.towxml_view strong {
+  font-weight: 700;
+}

@@ -1,0 +1,4 @@
+<!-- miniprogram/towxml/index.wxml -->
+<view class="towxml_view">
+  <rich-text nodes="{{nodes.nodes}}"></rich-text>
+</view>
