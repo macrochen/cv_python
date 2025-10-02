@@ -1,0 +1,42 @@
+{
+  "pages": [
+    "pages/dashboard/dashboard",
+    "pages/opportunities/opportunities",
+    "pages/profile/profile"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#fff",
+    "navigationBarTitleText": "AI面试助手",
+    "navigationBarTextStyle": "black"
+  },
+  "tabBar": {
+    "color": "#8e8e93",
+    "selectedColor": "#007aff",
+    "position": "bottom",
+    "borderStyle": "black",
+    "backgroundColor": "#ffffff",
+    "list": [
+      {
+        "pagePath": "pages/dashboard/dashboard",
+        "text": "动态",
+        "iconPath": "./images/tab_dashboard.png",
+        "selectedIconPath": "./images/tab_dashboard_active.png"
+      },
+      {
+        "pagePath": "pages/opportunities/opportunities",
+        "text": "机会",
+        "iconPath": "./images/tab_opportunities.png",
+        "selectedIconPath": "./images/tab_opportunities_active.png"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "我的",
+        "iconPath": "./images/tab_profile.png",
+        "selectedIconPath": "./images/tab_profile_active.png"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

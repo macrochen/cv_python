@@ -1,0 +1,128 @@
+/* pages/profile/profile.wxss */
+.container {
+  padding-bottom: 20rpx;
+}
+
+.weui-toptips {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 16rpx 30rpx;
+  font-size: 28rpx;
+  text-align: center;
+  color: #fff;
+  z-index: 5000;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  -webkit-transition: all 0.3s;
+  transition: all 0.3s;
+}
+
+.profile-header {
+  background-color: #fff;
+  padding: 40rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.05);
+  margin-bottom: 20rpx;
+}
+
+.avatar {
+  width: 192rpx;
+  height: 192rpx;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 4rpx 8rpx rgba(0, 0, 0, 0.1);
+}
+
+.user-name {
+  margin-top: 32rpx;
+  font-size: 48rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.edit-button {
+  margin-top: 24rpx;
+  background-color: #f2f2f2;
+  color: #333;
+  font-size: 28rpx;
+  padding: 12rpx 40rpx;
+  border-radius: 40rpx;
+  border: none;
+  outline: none;
+}
+
+.display-mode {
+  padding: 20rpx;
+  background-color: #fff;
+  border-radius: 16rpx;
+  box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.05);
+  margin: 0 20rpx;
+}
+
+.weui-article {
+  font-size: 30rpx;
+  line-height: 1.6;
+  color: #333;
+}
+
+.weui-article h1 {
+  font-size: 40rpx;
+  font-weight: bold;
+  margin-bottom: 20rpx;
+}
+
+.weui-article h3 {
+  font-size: 32rpx;
+  font-weight: bold;
+  margin-top: 30rpx;
+  margin-bottom: 16rpx;
+}
+
+.weui-article ul {
+  list-style-type: disc;
+  padding-left: 40rpx;
+  margin-bottom: 20rpx;
+}
+
+.weui-article p {
+  margin-bottom: 20rpx;
+}
+
+.weui-article strong {
+  font-weight: bold;
+}
+
+.edit-mode {
+  padding: 20rpx;
+  background-color: #fff;
+  border-radius: 16rpx;
+  box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.05);
+  margin: 0 20rpx;
+}
+
+.profile-textarea {
+  width: calc(100% - 40rpx);
+  height: 800rpx;
+  padding: 20rpx;
+  border: 2rpx solid #eee;
+  border-radius: 8rpx;
+  font-size: 30rpx;
+  line-height: 1.6;
+}
+
+.button-group {
+  margin-top: 30rpx;
+  display: flex;
+  justify-content: center;
+}
+
+.button-group .weui-btn {
+  width: 45%;
+  margin: 0 10rpx;
+}

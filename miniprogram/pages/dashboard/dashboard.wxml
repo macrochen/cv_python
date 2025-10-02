@@ -1,0 +1,4 @@
+<!--pages/dashboard/dashboard.wxml-->
+<view class="container">
+  <text>Welcome to Dashboard!</text>
+</view>

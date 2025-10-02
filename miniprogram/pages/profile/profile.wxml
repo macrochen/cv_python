@@ -1,0 +1,30 @@
+<!--pages/profile/profile.wxml-->
+<view class="container">
+  <!-- Save Success Toast -->
+  <view wx:if="{{showToast}}" class="weui-toptips weui-toptips_warn" style="background-color: #07c160;">
+    {{toastMessage}}
+  </view>
+
+  <!-- Profile Header -->
+  <view class="profile-header">
+    <image class="avatar" src="{{userInfo.avatar_url}}" mode="aspectFill"></image>
+    <text class="user-name">{{userInfo.name}}</text>
+    <button wx:if="{{!isEditing}}" class="edit-button" bindtap="editProfile">编辑资料</button>
+  </view>
+
+  <!-- Display Mode -->
+  <view wx:if="{{!isEditing}}" class="display-mode">
+    <view class="weui-article">
+      <rich-text nodes="{{renderedProfileContent}}"></rich-text>
+    </view>
+  </view>
+
+  <!-- Edit Mode -->
+  <view wx:if="{{isEditing}}" class="edit-mode">
+    <textarea class="profile-textarea" value="{{profileContent}}" bindinput="onProfileContentInput" auto-focus placeholder="请输入您的个人资料 (Markdown 格式)"></textarea>
+    <view class="button-group">
+      <button class="weui-btn weui-btn_default" bindtap="cancelEdit">取消</button>
+      <button class="weui-btn weui-btn_primary" bindtap="saveProfile">保存</button>
+    </view>
+  </view>
+</view>

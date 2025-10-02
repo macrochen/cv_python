@@ -1,0 +1,4 @@
+<!--pages/opportunities/opportunities.wxml-->
+<view class="container">
+  <text>Job Opportunities List</text>
+</view>
