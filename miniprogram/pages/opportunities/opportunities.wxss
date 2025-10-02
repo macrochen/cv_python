@@ -49,6 +49,7 @@ page {
 }
 
 /* Set border color based on status */
+.opportunity-card[data-status="待投递"] { background-color: #0ea5e9; } /* sky-500 */
 .opportunity-card[data-status="已投递"] { background-color: #eab308; } /* yellow-500 */
 .opportunity-card[data-status="面试中"] { background-color: #3b82f6; } /* blue-500 */
 .opportunity-card[data-status="已发Offer"] { background-color: #22c55e; } /* green-500 */
@@ -116,6 +117,11 @@ page {
   border-radius: 9999rpx;
   font-size: 24rpx;
   font-weight: 600; /* Bolder font */
+}
+
+.status-badge[data-status="待投递"] {
+  background-color: #e0f2fe; /* sky-100 */
+  color: #075985; /* sky-800 */
 }
 
 .status-badge[data-status="已投递"] {
@@ -275,6 +281,53 @@ page {
   border-bottom-right-radius: 24rpx;
 }
 
-.modal-button::after {
-  border: none; /* Remove default button borders */
+.add-icon {
+  line-height: 72rpx; /* Vertically center the plus sign */
+  transform: translateY(-2rpx); /* Optical adjustment */
+}
+
+/* --- Search and Filter Controls --- */
+.controls-container {
+  display: flex;
+  gap: 16rpx;
+  align-items: center;
+  margin-bottom: 32rpx;
+}
+
+.search-bar {
+  flex: 1; /* Allow search bar to take up available space */
+  display: flex;
+  align-items: center;
+  background-color: #fff;
+  border-radius: 16rpx;
+  padding: 12rpx 24rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+}
+
+.search-icon {
+  margin-right: 16rpx;
+}
+
+.search-input {
+  flex: 1;
+  font-size: 28rpx;
+}
+
+.filter-picker {
+  flex-shrink: 0; /* Prevent picker from shrinking */
+}
+
+.picker-view-filter {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  background-color: #e5e7eb; /* gray-200 */
+  color: #4b5563; /* gray-600 */
+  padding: 16rpx 28rpx;
+  border-radius: 9999rpx;
+  font-size: 28rpx;
+}
+
+.dropdown-arrow {
+  font-size: 20rpx;
 }

@@ -1,5 +1,19 @@
 <!--pages/opportunities/opportunities.wxml-->
 <view class="page-container">
+  <!-- Search and Filter Controls -->
+  <view class="controls-container">
+    <view class="search-bar">
+      <icon class="search-icon" type="search" size="16"></icon>
+      <input class="search-input" placeholder="搜索职位或公司..." bindinput="handleSearchInput" value="{{searchQuery}}"/>
+    </view>
+    <picker class="filter-picker" bindchange="handleFilterChange" value="{{activeFilterIndex}}" range="{{filterOptions}}">
+      <view class="picker-view-filter">
+        <text>{{filterOptions[activeFilterIndex]}}</text>
+        <text class="dropdown-arrow">▼</text>
+      </view>
+    </picker>
+  </view>
+
   <!-- Empty State -->
   <view wx:if="{{opportunities.length === 0}}" class="empty-state">
     <text class="empty-text">暂无求职机会</text>

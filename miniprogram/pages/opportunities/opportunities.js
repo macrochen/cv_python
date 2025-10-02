@@ -3,18 +3,17 @@ const app = getApp();
 
 Page({
   data: {
-    opportunities: [],
+    allOpportunities: [], // To store the original full list
+    opportunities: [], // To store the displayed list (filtered)
     isModalVisible: false,
-    statusOptions: ['已投递', '面试中', '已发Offer', '已结束'],
+    statusOptions: ['待投递', '已投递', '面试中', '已发Offer', '已结束'],
+    // Filter & Search State
+    searchQuery: '',
+    filterOptions: ['全部', '待投递', '已投递', '面试中', '已发Offer', '已结束'],
+    activeFilterIndex: 0,
     // For the modal
-    formData: { // Use a specific object for form data
-      company_name: '',
-      position_name: '',
-      status: '已投递',
-      latest_progress: '',
-      job_description: ''
-    },
-    editingOpportunityId: null, // To distinguish between Add and Edit
+    formData: { company_name: '', position_name: '', status: '待投递', latest_progress: '', job_description: '' },
+    editingOpportunityId: null,
     selectedStatusIndex: 0
   },
 
@@ -24,10 +23,8 @@ Page({
 
   fetchOpportunities: function () {
     const userOpenId = app.globalData.userInfo ? app.globalData.userInfo.openid : null;
-    if (!userOpenId) {
-      wx.showToast({ title: '用户未登录', icon: 'error', duration: 2000 });
-      return;
-    }
+    if (!userOpenId) { return; }
+
     const backendBaseUrl = app.globalData.backendBaseUrl;
     wx.request({
       url: `${backendBaseUrl}/opportunities/${userOpenId}`,
@@ -35,7 +32,7 @@ Page({
       success: (res) => {
         if (res.statusCode === 200) {
           const opportunities = res.data.map(opp => {
-            const statusIconMap = { '已投递': '✈️', '面试中': '🗓️', '已发Offer': '✅', '已结束': '❌' };
+            const statusIconMap = { '待投递': '✏️', '已投递': '✈️', '面试中': '🗓️', '已发Offer': '✅', '已结束': '❌' };
             const formattedCreateDate = opp.created_at.substring(0, 10);
             if (opp.latest_progress) {
               const icon = statusIconMap[opp.status] || '📢';
@@ -43,17 +40,50 @@ Page({
             } else {
               opp.displayProgress = `🕒 \u00A0 ${formattedCreateDate}`;
             }
-            opp.updated_at_formatted = opp.updated_at.substring(0, 10);
-            opp.created_at_formatted = formattedCreateDate;
             return opp;
           });
-          this.setData({ opportunities: opportunities });
+          this.setData({ allOpportunities: opportunities });
+          this.applyFilters(); // Apply filters after fetching
         } else {
-          wx.showToast({ title: '获取列表失败', icon: 'error', duration: 2000 });
+          wx.showToast({ title: '获取列表失败', icon: 'error' });
         }
       },
-      fail: () => { wx.showToast({ title: '网络错误', icon: 'error', duration: 2000 }); },
+      fail: () => { wx.showToast({ title: '网络错误', icon: 'error' }); },
+      complete: () => { wx.stopPullDownRefresh(); }
     });
+  },
+
+  // --- Filter & Search Logic --- //
+  handleSearchInput: function(e) {
+    this.setData({ searchQuery: e.detail.value });
+    this.applyFilters();
+  },
+
+  handleFilterChange: function(e) {
+    this.setData({ activeFilterIndex: e.detail.value });
+    this.applyFilters();
+  },
+
+  applyFilters: function() {
+    const { allOpportunities, activeFilterIndex, filterOptions, searchQuery } = this.data;
+    const activeFilter = filterOptions[activeFilterIndex];
+    let filtered = allOpportunities;
+
+    // Apply status filter
+    if (activeFilter !== '全部') {
+      filtered = filtered.filter(opp => opp.status === activeFilter);
+    }
+
+    // Apply search filter
+    if (searchQuery.trim() !== '') {
+      const lowerCaseQuery = searchQuery.toLowerCase();
+      filtered = filtered.filter(opp => 
+        opp.position_name.toLowerCase().includes(lowerCaseQuery) ||
+        opp.company_name.toLowerCase().includes(lowerCaseQuery)
+      );
+    }
+
+    this.setData({ opportunities: filtered });
   },
 
   // --- Modal Logic --- //
