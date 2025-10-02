@@ -81,7 +81,13 @@ def create_test_data():
             { 'position_name': '前端开发工程师', 'company_name': '谷歌 (Google)', 'status': '面试中', 'latest_progress': '下一轮: 技术二面 (明天)', 'job_description': '负责谷歌搜索前端界面的开发与维护，要求熟悉React/Vue，有大型项目经验。', 'source': '内推' },
             { 'position_name': '后端工程师', 'company_name': 'Meta', 'status': '已投递', 'latest_progress': '3天前已申请', 'job_description': '负责Facebook核心社交功能的后端服务开发，要求熟悉Python/Go，有高并发系统设计经验。', 'source': '官网' },
             { 'position_name': '产品经理', 'company_name': '亚马逊 (Amazon)', 'status': '已发Offer', 'latest_progress': '已收到Offer, 待确认', 'job_description': '负责亚马逊电商平台产品规划与设计，要求有用户增长经验，熟悉数据分析。', 'source': '猎头' },
-            { 'position_name': '数据科学家', 'company_name': '网飞 (Netflix)', 'status': '已结束', 'latest_progress': '流程已终止', 'job_description': '负责内容推荐算法的研发与优化，要求熟悉机器学习，有大数据处理经验。', 'source': 'LinkedIn' }
+            { 'position_name': '数据科学家', 'company_name': '网飞 (Netflix)', 'status': '已结束', 'latest_progress': '流程已终止', 'job_description': '负责内容推荐算法的研发与优化，要求熟悉机器学习，有大数据处理经验。', 'source': 'LinkedIn' },
+            { 'position_name': 'iOS开发工程师', 'company_name': '苹果 (Apple)', 'status': '面试中', 'latest_progress': '已完成在线笔试', 'job_description': '负责Apple Music和App Store的iOS客户端开发。', 'source': '宣讲会' },
+            { 'position_name': '全栈工程师', 'company_name': '微软 (Microsoft)', 'status': '已投递', 'latest_progress': '简历评估中', 'job_description': '参与Azure云服务的前后端开发工作。', 'source': '官网' },
+            { 'position_name': '游戏策划', 'company_name': '腾讯 (Tencent)', 'status': '已结束', 'latest_progress': '未通过群面', 'job_description': '负责王者荣耀新英雄和新玩法的设计。', 'source': '实习' },
+            { 'position_name': '算法工程师', 'company_name': '字节跳动 (ByteDance)', 'status': '已发Offer', 'latest_progress': '薪资沟通中', 'job_description': '负责抖音推荐流的算法优化和模型迭代。', 'source': '内推' },
+            { 'position_name': '测试开发工程师', 'company_name': '阿里巴巴 (Alibaba)', 'status': '面试中', 'latest_progress': 'HR面已完成', 'job_description': '负责淘宝App的自动化测试框架开发和维护。', 'source': '猎头' },
+            { 'position_name': '产品运营', 'company_name': '美团 (Meituan)', 'status': '已投递', 'latest_progress': '等待笔试通知', 'job_description': '负责美团外卖的用户增长和活动策划。', 'source': 'Boss直聘' }
         ]
 
         for opp_data in mock_opportunities:

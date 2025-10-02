@@ -1,4 +1,33 @@
 <!--pages/opportunities/opportunities.wxml-->
-<view class="container">
-  <text>Job Opportunities List</text>
+<view class="page-container">
+  <!-- Empty State -->
+  <view wx:if="{{opportunities.length === 0}}" class="empty-state">
+    <text class="empty-text">暂无求职机会</text>
+    <text class="empty-subtext">点击下方按钮添加一个吧</text>
+  </view>
+
+  <!-- Opportunities List -->
+  <view wx:else class="opportunities-list">
+    <block wx:for="{{opportunities}}" wx:key="id">
+      <view class="opportunity-card" data-status="{{item.status}}">
+        <view class="card-content">
+          <view class="card-header">
+            <text class="position-name">{{item.position_name}}</text>
+            <view class="status-badge" data-status="{{item.status}}">{{item.status}}</view>
+          </view>
+          <view class="company-name">
+            <text>{{item.company_name}}</text>
+          </view>
+          <view class="card-footer">
+            <text class="date-text">更新于: {{item.updated_at}}</text>
+          </view>
+        </view>
+      </view>
+    </block>
+  </view>
+
+  <!-- Centered Floating Action Button -->
+  <view class="fab-add-center">
+    <text class="fab-icon">+</text>
+  </view>
 </view>
