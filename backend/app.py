@@ -3,6 +3,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 import os
 from datetime import datetime
+import markdown # Moved to top
+from xhtml2pdf import pisa # Moved to top
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -317,6 +319,91 @@ def generate_resume(opportunity_id):
 """
 
     return jsonify({"resume_md": mock_resume_md}), 200
+
+
+@app.route('/generate_pdf', methods=['POST'])
+def generate_pdf_route():
+    import time
+    # markdown is now imported at the top of the file
+    # pisa is now imported at the top of the file
+
+    data = request.get_json()
+    resume_md = data.get('resume_md')
+    if not resume_md:
+        return jsonify({'error': 'No resume content provided'}), 400
+
+    # Define static and temp paths
+    static_folder = os.path.join(os.path.dirname(__file__), 'static')
+    temp_folder = os.path.join(static_folder, 'temp')
+    font_folder = os.path.join(static_folder, 'fonts') # New font folder path
+    os.makedirs(temp_folder, exist_ok=True)
+    os.makedirs(font_folder, exist_ok=True) # Ensure font folder exists
+
+    # Register font directly with pisa
+    font_name = "NotoSansSC"
+    font_filepath = os.path.join(font_folder, "NotoSansSC-Regular.ttf")
+
+    # Define link_callback for pisa to resolve resources (like fonts)
+    def link_callback(uri, rel):
+        # Convert HTML URIs to absolute system paths so xhtml2pdf can access those resources
+        if uri.startswith("/static/"):
+            path = os.path.join(static_folder, uri.replace("/static/", ""))
+            return path
+        return uri # default
+
+    if os.path.exists(font_filepath):
+        font_family_css = f"font-family: '{font_name}', sans-serif;"
+        print(f"INFO: Font '{font_name}' will be used from {font_filepath}")
+    else:
+        print(f"WARNING: Font file not found at {font_filepath}. Falling back to system font.")
+        font_family_css = "font-family: \"SimHei\", sans-serif;" # Fallback to SimHei
+
+    # Convert Markdown to HTML and add CSS for Chinese font support
+    html_content = markdown.markdown(resume_md)
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <style>
+            @font-face {{
+                font-family: "NotoSansSC";
+                src: url("/static/fonts/NotoSansSC-Regular.ttf") format("truetype");
+            }}
+            body {{ {font_family_css} line-height: 1.6; }}
+            h1 {{ font-size: 22pt; border-bottom: 2px solid #333; padding-bottom: 4px; margin-bottom: 0.8em; }}
+            h2 {{ font-size: 18pt; border-bottom: 1px solid #ccc; padding-bottom: 2px; margin-top: 1.5em; margin-bottom: 0.5em; }}
+            h3 {{ font-size: 14pt; margin-top: 1.2em; margin-bottom: 0.4em; }}
+            ul {{ list-style-type: disc; padding-left: 20px; margin-bottom: 1em; }}
+            li {{ margin-bottom: 0.5em; }}
+            strong {{ font-weight: bold; }}
+            p {{ margin-bottom: 1em; }}
+        </style>
+    </head>
+    <body>
+        {html_content}
+    </body>
+    </html>
+    """
+
+    # Define output filename
+    output_filename = "generated_resume.pdf"
+    output_filepath = os.path.join(temp_folder, output_filename)
+
+    # Generate PDF
+    with open(output_filepath, "w+b") as pdf_file:
+        pisa_status = pisa.CreatePDF(
+            src=html,                # a string or a file-like object
+            dest=pdf_file,
+            link_callback=link_callback # Pass the link_callback here
+        )
+
+    if pisa_status.err:
+        return jsonify({'error': 'PDF generation failed'}), 500
+
+    # Return the URL to the generated file
+    pdf_url = f"/static/temp/{output_filename}"
+    return jsonify({"pdf_url": pdf_url}), 200
 
 
 @app.route('/')

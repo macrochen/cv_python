@@ -231,6 +231,18 @@ page {
   padding: 24rpx;
 }
 
+.resume-editor {
+  width: 100%;
+  min-height: 600rpx;
+  border: 1rpx solid #d1d5db;
+  border-radius: 8rpx;
+  padding: 16rpx;
+  font-size: 28rpx;
+  line-height: 1.6;
+  box-sizing: border-box;
+  margin-bottom: 24rpx;
+}
+
 /* --- Generic Modal Styles --- */
 .modal-backdrop {
   position: fixed;

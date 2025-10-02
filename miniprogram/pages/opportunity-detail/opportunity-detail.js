@@ -14,7 +14,9 @@ Page({
     resumeKeywords: '',
     isGeneratingResume: false,
     generatedResumeMd: null,
-    resumeMarkdown: {}
+    resumeMarkdown: {},
+    isEditingResume: false,
+    editingResumeMd: ''
   },
 
   onLoad: function (options) {
@@ -133,6 +135,101 @@ Page({
       },
       complete: () => {
         this.setData({ isGeneratingResume: false });
+      }
+    });
+  },
+
+  // --- Resume Editing --- //
+  editResume: function() {
+    this.setData({
+      isEditingResume: true,
+      editingResumeMd: this.data.generatedResumeMd
+    });
+  },
+
+  cancelEditResume: function() {
+    this.setData({ isEditingResume: false });
+  },
+
+  handleResumeEditorInput: function(e) {
+    this.setData({
+      editingResumeMd: e.detail.value
+    });
+  },
+
+  saveResume: function() {
+    const newContent = this.data.editingResumeMd;
+    const towxml = new Towxml();
+    const resumeMarkdown = towxml.toJson(newContent);
+
+    this.setData({
+      generatedResumeMd: newContent,
+      resumeMarkdown: resumeMarkdown,
+      isEditingResume: false
+    });
+    wx.showToast({ title: '已保存', icon: 'success' });
+  },
+
+  downloadPdf: function() {
+    const resumeMd = this.data.generatedResumeMd;
+    if (!resumeMd) {
+      wx.showToast({ title: '请先生成简历', icon: 'none' });
+      return;
+    }
+
+    wx.showLoading({
+      title: '正在生成PDF...',
+      mask: true
+    });
+
+    const backendBaseUrl = app.globalData.backendBaseUrl;
+    wx.request({
+      url: `${backendBaseUrl}/generate_pdf`,
+      method: 'POST',
+      data: {
+        resume_md: resumeMd
+      },
+      success: (res) => {
+        if (res.statusCode === 200 && res.data.pdf_url) {
+          const fullPdfUrl = backendBaseUrl + res.data.pdf_url;
+          wx.downloadFile({
+            url: fullPdfUrl,
+            success: (downloadRes) => {
+              if (downloadRes.statusCode === 200) {
+                wx.openDocument({
+                  filePath: downloadRes.tempFilePath,
+                  showMenu: true,
+                  success: () => {
+                    wx.hideLoading();
+                  },
+                  fail: (openErr) => {
+                    wx.hideLoading();
+                    wx.showToast({ title: '打开PDF失败', icon: 'error' });
+                    console.error("Failed to open PDF: ", openErr);
+                  }
+                });
+              } else {
+                wx.hideLoading();
+                wx.showToast({ title: '下载PDF失败', icon: 'error' });
+                console.error("Failed to download PDF: ", downloadRes);
+              }
+            },
+            fail: (downloadErr) => {
+              wx.hideLoading();
+              wx.showToast({ title: '下载PDF失败', icon: 'error' });
+              console.error("Error downloading PDF: ", downloadErr);
+            }
+          });
+        } else {
+          wx.hideLoading();
+          wx.showToast({ title: '生成PDF失败', icon: 'error' });
+          console.error("Failed to generate PDF: ", res);
+        }
+      },
+      fail: (reqErr) => {
+        wx.hideLoading();
+        wx.showToast({ title: '网络错误', icon: 'error' });
+        console.error("Error generating PDF: ", reqErr);
       }
     });
   }

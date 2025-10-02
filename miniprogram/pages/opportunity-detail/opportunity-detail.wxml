@@ -72,13 +72,25 @@
             </view>
           </block>
           <block wx:else>
+            <!-- Resume Content -->
             <view class="resume-content-container">
-              <view class="resume-actions">
-                <button class="resume-btn">下载PDF</button>
-                <button class="resume-btn secondary">编辑</button>
+              <!-- Display Mode -->
+              <view wx:if="{{!isEditingResume}}">
+                            <view class="resume-actions">
+                              <button class="resume-btn" bindtap="downloadPdf">下载PDF</button>
+                              <button class="resume-btn secondary" bindtap="editResume">编辑</button>
+                            </view>                <view class="resume-preview">
+                  <towxml nodes="{{resumeMarkdown}}"/>
+                </view>
               </view>
-              <view class="resume-preview">
-                <towxml nodes="{{resumeMarkdown}}"/>
+
+              <!-- Edit Mode -->
+              <view wx:if="{{isEditingResume}}">
+                <textarea class="resume-editor" value="{{editingResumeMd}}" bindinput="handleResumeEditorInput" maxlength="20000"></textarea>
+                <view class="resume-actions">
+                  <button class="resume-btn secondary" bindtap="cancelEditResume">取消</button>
+                  <button class="resume-btn" bindtap="saveResume">保存</button>
+                </view>
               </view>
             </view>
           </block>
