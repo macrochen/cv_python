@@ -53,9 +53,17 @@ Page({
           const jdContent = res.data.job_description || '暂无职位描述';
           const jdMarkdown = towxml.toJson(jdContent);
           
+          const generatedResumeMd = res.data.generated_resume_md || null;
+          let resumeMarkdown = {};
+          if (generatedResumeMd) {
+            resumeMarkdown = towxml.toJson(generatedResumeMd);
+          }
+
           this.setData({ 
             opportunity: res.data,
-            jdMarkdown: jdMarkdown
+            jdMarkdown: jdMarkdown,
+            generatedResumeMd: generatedResumeMd,
+            resumeMarkdown: resumeMarkdown
           });
         } else {
           wx.showToast({
@@ -119,6 +127,27 @@ Page({
 
   generateResumeWithKeywords: function() {
     this.hideKeywordModal();
+
+    // Check if resume already exists
+    if (this.data.generatedResumeMd) {
+      wx.showModal({
+        title: '重新生成简历',
+        content: '该机会已存在简历，是否重新生成？重新生成将覆盖原有内容。',
+        success: (res) => {
+          if (res.confirm) {
+            this._callGenerateResumeApi();
+          } else {
+            wx.showToast({ title: '已取消生成', icon: 'none' });
+            this.setData({ isGeneratingResume: false }); // Ensure loading state is reset if it was set
+          }
+        }
+      });
+    } else {
+      this._callGenerateResumeApi();
+    }
+  },
+
+  _callGenerateResumeApi: function() {
     this.setData({ isGeneratingResume: true });
 
     const id = this.data.opportunityId;
@@ -137,7 +166,8 @@ Page({
           this.setData({
             generatedResumeMd: res.data.resume_md,
             resumeMarkdown: resumeMarkdown,
-            activeTab: 'resume' // Switch to resume tab
+            activeTab: 'resume',
+            'opportunity.generated_resume_md': res.data.resume_md // Update the opportunity object
           });
         } else {
           wx.showToast({ title: '生成失败', icon: 'error' });
@@ -255,15 +285,34 @@ Page({
 
   saveResume: function() {
     const newContent = this.data.editingResumeMd;
-    const towxml = new Towxml();
-    const resumeMarkdown = towxml.toJson(newContent);
+    const id = this.data.opportunityId;
+    const backendBaseUrl = app.globalData.backendBaseUrl;
 
-    this.setData({
-      generatedResumeMd: newContent,
-      resumeMarkdown: resumeMarkdown,
-      isEditingResume: false
+    wx.request({
+      url: `${backendBaseUrl}/opportunity/${id}/update_resume_content`,
+      method: 'PUT',
+      data: {
+        resume_md: newContent
+      },
+      success: (res) => {
+        if (res.statusCode === 200) {
+          const towxml = new Towxml();
+          const resumeMarkdown = towxml.toJson(newContent);
+          this.setData({
+            generatedResumeMd: newContent,
+            resumeMarkdown: resumeMarkdown,
+            isEditingResume: false,
+            'opportunity.generated_resume_md': newContent // Update the opportunity object
+          });
+          wx.showToast({ title: '简历已保存', icon: 'success' });
+        } else {
+          wx.showToast({ title: '保存失败', icon: 'error' });
+        }
+      },
+      fail: () => {
+        wx.showToast({ title: '网络错误', icon: 'error' });
+      }
     });
-    wx.showToast({ title: '已保存', icon: 'success' });
   },
 
   downloadPdf: function() {

@@ -48,6 +48,7 @@ class Opportunity(db.Model):
     source = db.Column(db.String(100))
     status = db.Column(db.String(50)) # e.g., '待投递', '面试中', '已发Offer'
     latest_progress = db.Column(db.String(255))
+    generated_resume_md = db.Column(db.Text) # New field for generated resume
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -64,6 +65,7 @@ class Opportunity(db.Model):
             'source': self.source,
             'status': self.status,
             'latest_progress': self.latest_progress,
+            'generated_resume_md': self.generated_resume_md,
             'created_at': self.created_at.isoformat(),
             'updated_at': self.updated_at.isoformat()
         }
@@ -379,7 +381,28 @@ def generate_resume(opportunity_id):
 *（更多项目细节和校园经历请参考完整版简历）*
 """
 
+    opportunity.generated_resume_md = mock_resume_md # Save to database
+    db.session.commit()
+
     return jsonify({"resume_md": mock_resume_md}), 200
+
+
+@app.route('/opportunity/<int:opportunity_id>/update_resume_content', methods=['PUT'])
+def update_resume_content(opportunity_id):
+    opportunity = Opportunity.query.get(opportunity_id)
+    if not opportunity:
+        return jsonify({'error': 'Opportunity not found'}), 404
+
+    data = request.get_json()
+    resume_md = data.get('resume_md')
+
+    if resume_md is None:
+        return jsonify({'error': 'Resume content is required'}), 400
+
+    opportunity.generated_resume_md = resume_md
+    db.session.commit()
+
+    return jsonify({'message': 'Resume content updated successfully'}), 200
 
 
 @app.route('/generate_pdf', methods=['POST'])
