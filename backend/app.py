@@ -1,9 +1,11 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from flask_cors import CORS
 import os
 from datetime import datetime
 
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 # Configure persistent SQLite database
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -248,6 +250,73 @@ def analyze_jd(opportunity_id):
     }
 
     return jsonify(mock_response), 200
+
+
+@app.route('/opportunity/<int:opportunity_id>/generate_resume', methods=['POST'])
+def generate_resume(opportunity_id):
+    import time
+    opportunity = Opportunity.query.get(opportunity_id)
+    if not opportunity:
+        return jsonify({'error': 'Opportunity not found'}), 404
+
+    user = User.query.get(opportunity.user_id)
+    if not user:
+        return jsonify({'error': 'User not found for this opportunity'}), 404
+
+    data = request.get_json()
+    keywords = data.get('keywords', '')
+
+    # --- AI Prompt Preparation --- #
+    prompt = f"""
+    请根据以下用户简历、岗位描述（JD）和用户指定的关键词，为该用户生成一份高度匹配该岗位的定制化简历，并以Markdown格式返回。
+
+    - **核心要求**: 突出用户技能和经历与JD的契合点。
+    - **关键词**: 在简历中巧妙地融入以下关键词: {keywords if keywords else '无'}
+
+    --- 用户简历 ---
+    {user.profile_content}
+
+    --- 岗位描述 (JD) ---
+    {opportunity.job_description}
+    """
+
+    print("--- Generated AI Prompt for Resume ---")
+    print(prompt)
+    print("--------------------------------------")
+
+    # --- Mock AI Call --- #
+    time.sleep(2)
+
+    # Return a hardcoded mock response
+    mock_resume_md = f"""# 张三 - {opportunity.position_name} 定制简历
+
+---
+
+### 联系方式
+- **电话**: 138-1234-5678
+- **邮箱**: zhangsan@email.com
+- **GitHub**: github.com/zhangsan
+
+### 核心优势 (针对 {opportunity.company_name})
+
+- **技术匹配**: 熟练掌握 **Python** 和 **Flask** 框架，与岗位要求的技术栈高度契合。
+- **经验丰富**: 拥有完整的Web应用开发和部署经验，尤其在图书管理系统项目中，独立完成了从设计到部署的全过程。
+- **关键词突出**: {f'在项目中重点应用了 **{keywords}** 等技术。' if keywords else '对岗位要求的各项技能有深入理解。'}
+
+### 项目经历
+
+**基于Python的图书管理系统 (课程设计)**
+- **技术栈**: Flask, SQLite, Nginx
+- **项目描述**: 独立设计并开发了一个支持多人在线借阅的图书管理系统，旨在提升校园图书流转效率。
+- **我的职责**:
+  - 实现了用户的注册、登录、图书查询、借阅和归还等核心功能。
+  - 设计了数据库模式，并使用 SQLAlchemy 进行数据操作。
+  - 通过 Nginx 将应用部署在个人服务器上，积累了基本的Linux运维知识。
+
+*（更多项目细节和校园经历请参考完整版简历）*
+"""
+
+    return jsonify({"resume_md": mock_resume_md}), 200
 
 
 @app.route('/')

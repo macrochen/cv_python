@@ -197,3 +197,124 @@ page {
   color: #15803d; /* green-700 */
   line-height: 1.6;
 }
+
+/* --- Resume Tab Content --- */
+.resume-content-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.resume-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16rpx;
+  margin-bottom: 24rpx;
+}
+
+.resume-btn {
+  background-color: #3b82f6; /* blue-500 */
+  color: #fff;
+  font-size: 24rpx;
+  padding: 8rpx 24rpx;
+  border-radius: 8rpx;
+}
+
+.resume-btn.secondary {
+  background-color: #e5e7eb; /* gray-200 */
+  color: #374151;
+}
+
+.resume-preview {
+  background-color: #f9fafb; /* gray-50 */
+  border: 1rpx solid #e5e7eb;
+  border-radius: 8rpx;
+  padding: 24rpx;
+}
+
+/* --- Generic Modal Styles --- */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-panel {
+  width: 90%;
+  background-color: #fff;
+  border-radius: 24rpx;
+  box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+.keyword-modal {
+  max-width: 600rpx;
+}
+
+.modal-header {
+  padding: 32rpx;
+  border-bottom: 1rpx solid #e5e7eb;
+}
+
+.modal-title {
+  font-size: 36rpx;
+  font-weight: bold;
+  text-align: center;
+}
+
+.modal-body {
+  padding: 32rpx;
+}
+
+.form-label {
+  font-size: 28rpx;
+  color: #374151;
+  margin-bottom: 12rpx;
+  display: block;
+}
+
+.form-input {
+  width: 100%;
+  padding: 24rpx 16rpx;
+  min-height: 70rpx;
+  border: 1rpx solid #d1d5db;
+  border-radius: 12rpx;
+  font-size: 32rpx;
+  box-sizing: border-box;
+}
+
+.modal-footer {
+  display: flex;
+  border-top: 1rpx solid #e5e7eb;
+}
+
+.modal-button {
+  flex: 1;
+  padding: 24rpx;
+  font-size: 32rpx;
+  font-weight: 500;
+  text-align: center;
+  border-radius: 0;
+}
+
+.modal-button.cancel {
+  color: #4b5563;
+  border-bottom-left-radius: 24rpx;
+}
+
+.modal-button.save {
+  background-color: #3b82f6; /* Blue for confirm */
+  color: #fff;
+  border-bottom-right-radius: 24rpx;
+}
+
+.modal-button::after {
+  border: none; /* Remove default button borders */
+}

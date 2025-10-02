@@ -9,7 +9,12 @@ Page({
     jdMarkdown: {}, // For towxml component
     activeTab: 'details', // To control the active tab
     isAnalyzingJd: false,
-    jdAnalysisResult: null
+    jdAnalysisResult: null,
+    isKeywordModalVisible: false,
+    resumeKeywords: '',
+    isGeneratingResume: false,
+    generatedResumeMd: null,
+    resumeMarkdown: {}
   },
 
   onLoad: function (options) {
@@ -80,6 +85,54 @@ Page({
       fail: () => {
         this.setData({ isAnalyzingJd: false });
         wx.showToast({ title: '网络错误', icon: 'error' });
+      }
+    });
+  },
+
+  // --- Keyword Modal and Resume Generation --- //
+  showKeywordModal: function() {
+    this.setData({ isKeywordModalVisible: true, resumeKeywords: '' });
+  },
+
+  hideKeywordModal: function() {
+    this.setData({ isKeywordModalVisible: false });
+  },
+
+  handleKeywordInput: function(e) {
+    this.setData({ resumeKeywords: e.detail.value });
+  },
+
+  generateResumeWithKeywords: function() {
+    this.hideKeywordModal();
+    this.setData({ isGeneratingResume: true });
+
+    const id = this.data.opportunityId;
+    const backendBaseUrl = app.globalData.backendBaseUrl;
+
+    wx.request({
+      url: `${backendBaseUrl}/opportunity/${id}/generate_resume`,
+      method: 'POST',
+      data: {
+        keywords: this.data.resumeKeywords
+      },
+      success: (res) => {
+        if (res.statusCode === 200 && res.data.resume_md) {
+          const towxml = new Towxml();
+          const resumeMarkdown = towxml.toJson(res.data.resume_md);
+          this.setData({
+            generatedResumeMd: res.data.resume_md,
+            resumeMarkdown: resumeMarkdown,
+            activeTab: 'resume' // Switch to resume tab
+          });
+        } else {
+          wx.showToast({ title: '生成失败', icon: 'error' });
+        }
+      },
+      fail: () => {
+        wx.showToast({ title: '网络错误', icon: 'error' });
+      },
+      complete: () => {
+        this.setData({ isGeneratingResume: false });
       }
     });
   }

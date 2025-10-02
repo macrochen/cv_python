@@ -8,10 +8,10 @@
 
   <!-- Main AI Actions -->
   <view class="actions-container">
-    <view class="action-card resume">
-      <text class="action-icon">✨</text>
+    <view class="action-card resume" bindtap="showKeywordModal" disabled="{{isGeneratingResume}}">
+      <text class="action-icon">{{isGeneratingResume ? '⏳' : '✨'}}</text>
       <view class="action-text">
-        <text class="action-title">AI 生成定制简历</text>
+        <text class="action-title">{{isGeneratingResume ? 'AI 正在生成中...' : 'AI 生成定制简历'}}</text>
         <text class="action-subtitle">根据JD和你的背景，量身打造</text>
       </view>
     </view>
@@ -63,10 +63,25 @@
 
         </view>
       </view>
-      <!-- Other tabs will be implemented later -->
+      <!-- Resume Tab -->
       <view class="tab-content" hidden="{{activeTab !== 'resume'}}">
-        <view class="card placeholder-card">
-          <text>简历详情功能待开发</text>
+        <view class="card">
+          <block wx:if="{{!generatedResumeMd}}">
+            <view class="placeholder-card">
+              <text>尚未生成简历。请点击上方的“AI生成定制简历”按钮开始。</text>
+            </view>
+          </block>
+          <block wx:else>
+            <view class="resume-content-container">
+              <view class="resume-actions">
+                <button class="resume-btn">下载PDF</button>
+                <button class="resume-btn secondary">编辑</button>
+              </view>
+              <view class="resume-preview">
+                <towxml nodes="{{resumeMarkdown}}"/>
+              </view>
+            </view>
+          </block>
         </view>
       </view>
       <view class="tab-content" hidden="{{activeTab !== 'qa'}}">
@@ -81,4 +96,22 @@
       </view>
     </view>
   </view>
+
+  <!-- Keyword Input Modal -->
+  <view wx:if="{{isKeywordModalVisible}}" class="modal-backdrop" bindtap="hideKeywordModal">
+    <view class="modal-panel keyword-modal" catchtap="doNothing">
+      <view class="modal-header">
+        <text class="modal-title">关键词引导</text>
+      </view>
+      <view class="modal-body">
+        <text class="form-label">输入希望AI重点突出的关键词（可选）</text>
+        <input class="form-input" placeholder="例如: Vue3, 团队合作" value="{{resumeKeywords}}" bindinput="handleKeywordInput"/>
+      </view>
+      <view class="modal-footer">
+        <button class="modal-button cancel" bindtap="hideKeywordModal">取消</button>
+        <button class="modal-button save" bindtap="generateResumeWithKeywords">确认生成</button>
+      </view>
+    </view>
+  </view>
+
 </view>
