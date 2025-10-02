@@ -6,199 +6,207 @@ Page({
     opportunities: [],
     isModalVisible: false,
     statusOptions: ['已投递', '面试中', '已发Offer', '已结束'],
+    // For the modal
+    formData: { // Use a specific object for form data
+      company_name: '',
+      position_name: '',
+      status: '已投递',
+      latest_progress: '',
+      job_description: ''
+    },
+    editingOpportunityId: null, // To distinguish between Add and Edit
     selectedStatusIndex: 0
   },
 
   onShow: function () {
-    // Using onShow to ensure data is refreshed every time the page is displayed
     this.fetchOpportunities();
   },
 
   fetchOpportunities: function () {
     const userOpenId = app.globalData.userInfo ? app.globalData.userInfo.openid : null;
-
     if (!userOpenId) {
-      wx.showToast({
-        title: '用户未登录',
-        icon: 'error',
-        duration: 2000
-      });
-      // Optionally, navigate to a login page
-      // wx.navigateTo({ url: '/pages/login/login' });
+      wx.showToast({ title: '用户未登录', icon: 'error', duration: 2000 });
       return;
     }
-
     const backendBaseUrl = app.globalData.backendBaseUrl;
     wx.request({
       url: `${backendBaseUrl}/opportunities/${userOpenId}`,
       method: 'GET',
       success: (res) => {
         if (res.statusCode === 200) {
-          const statusIconMap = {
-            '已投递': '✈️',
-            '面试中': '🗓️',
-            '已发Offer': '✅',
-            '已结束': '❌'
-          };
-
           const opportunities = res.data.map(opp => {
+            const statusIconMap = { '已投递': '✈️', '面试中': '🗓️', '已发Offer': '✅', '已结束': '❌' };
             const formattedCreateDate = opp.created_at.substring(0, 10);
             if (opp.latest_progress) {
-              const icon = statusIconMap[opp.status] || '📢'; // Default icon
+              const icon = statusIconMap[opp.status] || '📢';
               opp.displayProgress = `${icon} \u00A0 ${opp.latest_progress}`;
             } else {
               opp.displayProgress = `🕒 \u00A0 ${formattedCreateDate}`;
             }
-            // Keep original dates if needed elsewhere, just format for display
             opp.updated_at_formatted = opp.updated_at.substring(0, 10);
             opp.created_at_formatted = formattedCreateDate;
             return opp;
           });
-
-          this.setData({
-            opportunities: opportunities
-          });
+          this.setData({ opportunities: opportunities });
         } else {
-          wx.showToast({
-            title: '获取列表失败',
-            icon: 'error',
-            duration: 2000
-          });
-          console.error("Failed to fetch opportunities: ", res);
+          wx.showToast({ title: '获取列表失败', icon: 'error', duration: 2000 });
         }
       },
-      fail: (err) => {
-        wx.showToast({
-          title: '网络错误',
-          icon: 'error',
-          duration: 2000
-        });
-        console.error("Error fetching opportunities: ", err);
-      },
-      complete: () => {
-        wx.stopPullDownRefresh(); // Stop the refresh animation
-      }
+      fail: () => { wx.showToast({ title: '网络错误', icon: 'error', duration: 2000 }); },
     });
   },
 
-  showAddModal: function() {
-    this.setData({ isModalVisible: true, selectedStatusIndex: 0 });
+  // --- Modal Logic --- //
+  handleAddButtonTap: function() {
+    // This function acts as a clean entry point for Add mode, ensuring no event object is passed.
+    this.showOpportunityModal();
+  },
+
+  showOpportunityModal: function(opportunity = null) {
+    if (opportunity) {
+      // Edit mode
+      const statusIndex = this.data.statusOptions.indexOf(opportunity.status);
+      this.setData({
+        isModalVisible: true,
+        editingOpportunityId: opportunity.id,
+        formData: {
+          company_name: opportunity.company_name,
+          position_name: opportunity.position_name,
+          status: opportunity.status,
+          latest_progress: opportunity.latest_progress,
+          job_description: opportunity.job_description
+        },
+        selectedStatusIndex: statusIndex >= 0 ? statusIndex : 0
+      });
+      console.log("Data to set for Edit mode:", opportunity);
+    } else {
+      // Add mode
+      const dataToSet = {
+        isModalVisible: true,
+        editingOpportunityId: null,
+        formData: { company_name: '', position_name: '', status: '已投递', latest_progress: '', job_description: '' },
+        selectedStatusIndex: 0
+      };
+      console.log("Data to set for Add mode:", dataToSet);
+      this.setData(dataToSet);
+    }
   },
 
   hideModal: function() {
     this.setData({ isModalVisible: false });
   },
 
-  bindStatusChange: function(e) {
-    console.log("Picker value changed, new index:", e.detail.value);
+  handleInputChange: function(e) {
+    const field = e.currentTarget.dataset.field;
     this.setData({
-      selectedStatusIndex: e.detail.value
-    })
+      [`formData.${field}`]: e.detail.value
+    });
   },
 
-  handleSaveOpportunity: function(e) {
-    const formData = e.detail.value;
-    const userOpenId = app.globalData.userInfo ? app.globalData.userInfo.openid : null;
+  bindStatusChange: function(e) {
+    this.setData({
+      selectedStatusIndex: e.detail.value,
+      'formData.status': this.data.statusOptions[e.detail.value]
+    });
+  },
 
-    if (!formData.company_name || !formData.position_name) {
-      wx.showToast({
-        title: '公司和职位为必填项',
-        icon: 'none'
-      });
+  handleSaveOpportunity: function() {
+    const userOpenId = app.globalData.userInfo ? app.globalData.userInfo.openid : null;
+    if (!this.data.formData.company_name || !this.data.formData.position_name) {
+      wx.showToast({ title: '公司和职位为必填项', icon: 'none' });
       return;
     }
-
     if (!userOpenId) {
       wx.showToast({ title: '用户未登录', icon: 'error' });
       return;
     }
 
     const backendBaseUrl = app.globalData.backendBaseUrl;
+    const isEditing = this.data.editingOpportunityId !== null;
+    const url = isEditing ? `${backendBaseUrl}/opportunity/${this.data.editingOpportunityId}` : `${backendBaseUrl}/opportunities`;
+    const method = isEditing ? 'PUT' : 'POST';
+
+    const dataToSend = {
+      ...this.data.formData,
+      user_openid: userOpenId
+    };
+
     wx.request({
-      url: `${backendBaseUrl}/opportunities`,
-      method: 'POST',
-      data: {
-        user_openid: userOpenId,
-        company_name: formData.company_name,
-        position_name: formData.position_name,
-        status: this.data.statusOptions[this.data.selectedStatusIndex],
-        latest_progress: formData.latest_progress,
-        job_description: formData.job_description
-      },
+      url: url,
+      method: method,
+      data: dataToSend,
       success: (res) => {
-        if (res.statusCode === 201) {
-          wx.showToast({ title: '添加成功', icon: 'success' });
+        if (res.statusCode === 200 || res.statusCode === 201) {
+          wx.showToast({ title: isEditing ? '修改成功' : '添加成功', icon: 'success' });
           this.hideModal();
-          this.fetchOpportunities(); // Refresh the list
+          this.fetchOpportunities();
         } else {
-          wx.showToast({ title: '添加失败', icon: 'error' });
-          console.error("Failed to save opportunity: ", res);
+          wx.showToast({ title: '保存失败', icon: 'error' });
         }
       },
-      fail: (err) => {
-        wx.showToast({ title: '网络错误', icon: 'error' });
-        console.error("Error saving opportunity: ", err);
+      fail: () => { wx.showToast({ title: '网络错误', icon: 'error' }); }
+    });
+  },
+
+  // --- Action Sheet and Delete Logic --- //
+  showMoreActions: function(e) {
+    const opportunityId = e.currentTarget.dataset.id;
+    wx.showActionSheet({
+      itemList: ['编辑', '删除'],
+      success: (res) => {
+        if (res.tapIndex === 1) { // Delete
+          this.deleteOpportunity(opportunityId);
+        } else if (res.tapIndex === 0) { // Edit
+          this.editOpportunity(opportunityId);
+        }
       }
     });
   },
 
-  doNothing: function() {
-    // This is used on a catchtap to prevent the modal from closing when clicking on the panel itself
-  },
-
-  onPullDownRefresh: function () {
-    // Handle pull-down refresh
-    this.fetchOpportunities();
-  },
-
-  showMoreActions: function(e) {
-    const opportunityId = e.currentTarget.dataset.id;
-    const that = this;
-
-    wx.showActionSheet({
-      itemList: ['编辑', '删除'],
-      success: function(res) {
-        if (res.tapIndex === 1) { // Index 1 is '删除'
-          that.deleteOpportunity(opportunityId);
-        } else if (res.tapIndex === 0) { // Index 0 is '编辑'
-          // To be implemented in the next step
-          console.log("Edit action for opportunity: ", opportunityId);
-          wx.showToast({ title: '编辑功能待开发', icon: 'none' });
+  editOpportunity: function(id) {
+    const backendBaseUrl = app.globalData.backendBaseUrl;
+    wx.request({
+      url: `${backendBaseUrl}/opportunity/${id}`,
+      method: 'GET',
+      success: (res) => {
+        if (res.statusCode === 200) {
+          this.showOpportunityModal(res.data);
+        } else {
+          wx.showToast({ title: '获取详情失败', icon: 'error' });
         }
       },
-      fail: function(res) {
-        console.log(res.errMsg);
-      }
+      fail: () => { wx.showToast({ title: '网络错误', icon: 'error' }); }
     });
   },
 
   deleteOpportunity: function(id) {
-    const that = this;
     wx.showModal({
       title: '确认删除',
       content: '您确定要删除这个机会吗？此操作无法撤销。',
-      success: function(res) {
+      success: (res) => {
         if (res.confirm) {
           const backendBaseUrl = app.globalData.backendBaseUrl;
           wx.request({
             url: `${backendBaseUrl}/opportunity/${id}`,
             method: 'DELETE',
-            success: function(deleteRes) {
+            success: (deleteRes) => {
               if (deleteRes.statusCode === 200) {
                 wx.showToast({ title: '删除成功', icon: 'success' });
-                that.fetchOpportunities(); // Refresh the list
+                this.fetchOpportunities();
               } else {
                 wx.showToast({ title: '删除失败', icon: 'error' });
-                console.error("Failed to delete opportunity: ", deleteRes);
               }
             },
-            fail: function(err) {
-              wx.showToast({ title: '网络错误', icon: 'error' });
-              console.error("Error deleting opportunity: ", err);
-            }
+            fail: () => { wx.showToast({ title: '网络错误', icon: 'error' }); }
           });
         }
       }
     });
+  },
+
+  doNothing: function() {},
+
+  onPullDownRefresh: function () {
+    this.fetchOpportunities();
   }
 });
