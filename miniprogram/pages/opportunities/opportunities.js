@@ -149,5 +149,56 @@ Page({
   onPullDownRefresh: function () {
     // Handle pull-down refresh
     this.fetchOpportunities();
+  },
+
+  showMoreActions: function(e) {
+    const opportunityId = e.currentTarget.dataset.id;
+    const that = this;
+
+    wx.showActionSheet({
+      itemList: ['编辑', '删除'],
+      success: function(res) {
+        if (res.tapIndex === 1) { // Index 1 is '删除'
+          that.deleteOpportunity(opportunityId);
+        } else if (res.tapIndex === 0) { // Index 0 is '编辑'
+          // To be implemented in the next step
+          console.log("Edit action for opportunity: ", opportunityId);
+          wx.showToast({ title: '编辑功能待开发', icon: 'none' });
+        }
+      },
+      fail: function(res) {
+        console.log(res.errMsg);
+      }
+    });
+  },
+
+  deleteOpportunity: function(id) {
+    const that = this;
+    wx.showModal({
+      title: '确认删除',
+      content: '您确定要删除这个机会吗？此操作无法撤销。',
+      success: function(res) {
+        if (res.confirm) {
+          const backendBaseUrl = app.globalData.backendBaseUrl;
+          wx.request({
+            url: `${backendBaseUrl}/opportunity/${id}`,
+            method: 'DELETE',
+            success: function(deleteRes) {
+              if (deleteRes.statusCode === 200) {
+                wx.showToast({ title: '删除成功', icon: 'success' });
+                that.fetchOpportunities(); // Refresh the list
+              } else {
+                wx.showToast({ title: '删除失败', icon: 'error' });
+                console.error("Failed to delete opportunity: ", deleteRes);
+              }
+            },
+            fail: function(err) {
+              wx.showToast({ title: '网络错误', icon: 'error' });
+              console.error("Error deleting opportunity: ", err);
+            }
+          });
+        }
+      }
+    });
   }
 });
