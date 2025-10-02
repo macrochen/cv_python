@@ -16,10 +16,18 @@
       </view>
     </view>
     <view class="action-card practice">
-      <text class="action-icon">🎙️</text>
-      <view class="action-text">
-        <text class="action-title">AI 进行面试演练</text>
-        <text class="action-subtitle">模拟实战，预测问题并练习</text>
+      <view wx:if="{{!qaGenerated}}" class="practice-initial-state">
+        <button id="main-action-practice" class="action-button" bindtap="handleGeneratePractice" disabled="{{isGeneratingQa}}">
+          <text class="action-icon">{{isGeneratingQa ? '⏳' : '🎙️'}}</text>
+          <view class="action-text">
+            <text class="action-title">{{isGeneratingQa ? 'AI 正在生成问题...' : 'AI 进行面试演练'}}</text>
+            <text class="action-subtitle">模拟实战，预测问题并练习</text>
+          </view>
+        </button>
+      </view>
+      <view wx:else class="practice-confirm-state">
+        <text class="confirm-text">AI 已为您生成 {{generatedQA.length}} 个高频问题！</text>
+        <button class="start-practice-btn" bindtap="startPractice">立即开始</button>
       </view>
     </view>
   </view>
@@ -96,9 +104,24 @@
           </block>
         </view>
       </view>
+      <!-- Q&A Tab -->
       <view class="tab-content" hidden="{{activeTab !== 'qa'}}">
-        <view class="card placeholder-card">
-          <text>问答详情功能待开发</text>
+        <view class="qa-controls" wx:if="{{generatedQA.length > 0}}">
+          <button class="qa-btn add" bindtap="handleAddQa">+ 新增问答</button>
+          <button class="qa-btn save" bindtap="saveQaList">保存全部修改</button>
+        </view>
+        <view wx:if="{{generatedQA.length === 0}}" class="card placeholder-card">
+          <text>尚未生成问答。请点击上方的“AI进行面试演练”按钮开始。</text>
+        </view>
+        <view wx:else class="qa-list-container">
+          <block wx:for="{{generatedQA}}" wx:key="id">
+            <view class="qa-item">
+                              <view class="qa-item-header">
+                                <textarea class="question-input" value="{{item.question}}" bindinput="handleQaInputChange" data-id="{{item.id}}" data-field="question" auto-height></textarea>
+                                <view class="delete-qa-btn" bindtap="deleteQa" data-id="{{item.id}}">×</view>
+                              </view>              <textarea class="answer-input" value="{{item.suggested_answer}}" bindinput="handleQaInputChange" data-id="{{item.id}}" data-field="suggested_answer" auto-height></textarea>
+            </view>
+          </block>
         </view>
       </view>
       <view class="tab-content" hidden="{{activeTab !== 'report'}}">

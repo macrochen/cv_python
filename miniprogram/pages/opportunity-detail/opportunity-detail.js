@@ -2,6 +2,16 @@
 const app = getApp();
 const Towxml = require('../../towxml/main');
 
+// A simple debounce function
+let debounceTimer = null;
+function debounce(func, delay) {
+  return function(...args) {
+    const context = this;
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => func.apply(context, args), delay);
+  };
+}
+
 Page({
   data: {
     opportunityId: null,
@@ -16,7 +26,10 @@ Page({
     generatedResumeMd: null,
     resumeMarkdown: {},
     isEditingResume: false,
-    editingResumeMd: ''
+    editingResumeMd: '',
+    isGeneratingQa: false,
+    qaGenerated: false,
+    generatedQA: []
   },
 
   onLoad: function (options) {
@@ -135,6 +148,89 @@ Page({
       },
       complete: () => {
         this.setData({ isGeneratingResume: false });
+      }
+    });
+  },
+
+  // --- AI Interview Practice --- //
+  handleGeneratePractice: function() {
+    this.setData({ isGeneratingQa: true, qaGenerated: false });
+
+    const id = this.data.opportunityId;
+    const backendBaseUrl = app.globalData.backendBaseUrl;
+
+    wx.request({
+      url: `${backendBaseUrl}/opportunity/${id}/generate_qa`,
+      method: 'POST',
+      success: (res) => {
+        if (res.statusCode === 200 && res.data.qa_list) {
+          this.setData({
+            qaGenerated: true,
+            generatedQA: res.data.qa_list,
+            activeTab: 'qa' // Switch to Q&A tab
+          });
+        } else {
+          wx.showToast({ title: '生成问题失败', icon: 'error' });
+        }
+      },
+      fail: () => {
+        wx.showToast({ title: '网络错误', icon: 'error' });
+      },
+      complete: () => {
+        this.setData({ isGeneratingQa: false });
+      }
+    });
+  },
+
+  startPractice: function() {
+    console.log("Starting practice with generated QA:", this.data.generatedQA);
+    wx.showToast({ title: '面试演练功能待开发', icon: 'none' });
+    // Full practice overlay implementation will go here
+  },
+
+  // --- Q&A List Management --- //
+  handleAddQa: function() {
+    const newQa = { id: Date.now(), question: '新问题...', suggested_answer: '新答案...' };
+    this.setData({
+      generatedQA: [...this.data.generatedQA, newQa]
+    });
+  },
+
+  handleQaInputChange: function(e) {
+    const { id, field } = e.currentTarget.dataset;
+    const value = e.detail.value;
+    const index = this.data.generatedQA.findIndex(qa => qa.id == id);
+
+    if (index !== -1) {
+      // Debounce the setData call
+      this._debouncedSetQaData(index, field, value);
+    }
+  },
+
+  // Debounced version of setting QA data
+  _debouncedSetQaData: debounce(function(index, field, value) {
+    const updatedQA = [...this.data.generatedQA];
+    updatedQA[index][field] = value;
+    this.setData({ generatedQA: updatedQA });
+  }, 300), // 300ms debounce delay
+
+  saveQaList: function() {
+    wx.showToast({ title: '问答列表已保存！', icon: 'success' });
+    // In a real app, this would send data to backend
+  },
+
+  deleteQa: function(e) {
+    const idToDelete = e.currentTarget.dataset.id;
+    wx.showModal({
+      title: '确认删除',
+      content: '您确定要删除这个问题吗？',
+      success: (res) => {
+        if (res.confirm) {
+          this.setData({
+            generatedQA: this.data.generatedQA.filter(qa => qa.id != idToDelete)
+          });
+          wx.showToast({ title: '删除成功', icon: 'success' });
+        }
       }
     });
   },

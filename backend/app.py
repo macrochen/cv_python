@@ -254,6 +254,67 @@ def analyze_jd(opportunity_id):
     return jsonify(mock_response), 200
 
 
+@app.route('/opportunity/<int:opportunity_id>/generate_qa', methods=['POST'])
+def generate_qa(opportunity_id):
+    import time
+    opportunity = Opportunity.query.get(opportunity_id)
+    if not opportunity:
+        return jsonify({'error': 'Opportunity not found'}), 404
+
+    user = User.query.get(opportunity.user_id)
+    if not user:
+        return jsonify({'error': 'User not found for this opportunity'}), 404
+
+    # --- AI Prompt Preparation --- #
+    prompt = f"""
+    请根据以下用户简历和岗位描述（JD），为用户生成5个高频面试问题及对应的建议答案，确保问题类型多样化，覆盖技术、项目、行为等多个方面，并以JSON格式返回。
+
+    返回的JSON需要包含一个键：
+    - `qa_list`: 一个对象数组，每个对象包含 `question` 和 `suggested_answer` 两个键。
+
+    --- 用户简历 ---
+    {user.profile_content}
+
+    --- 岗位描述 (JD) ---
+    {opportunity.job_description}
+    """
+
+    print("--- Generated AI Prompt for Q&A ---")
+    print(prompt)
+    print("-----------------------------------")
+
+    # --- Mock AI Call --- #
+    time.sleep(2)
+
+    # Return a hardcoded mock response
+    import random
+    num_questions = random.randint(3, 5) # Simulate dynamic number of questions
+    mock_qa_list = [
+        {
+            "question": "请介绍一下你参与过的最有挑战性的项目，你在其中扮演了什么角色，遇到了什么困难，以及如何解决的？",
+            "suggested_answer": "建议使用STAR原则（情境、任务、行动、结果）来组织回答，突出你在项目中的贡献和解决问题的能力。"
+        },
+        {
+            "question": "你对我们公司有什么了解？为什么选择我们公司？",
+            "suggested_answer": "建议提前研究公司官网、新闻报道和产品，结合自身兴趣和职业规划，真诚表达对公司的认同和向往。"
+        },
+        {
+            "question": "你认为自己最大的优点和缺点是什么？",
+            "suggested_answer": "优点要结合岗位要求，举例说明；缺点要选择不影响核心工作能力的，并说明你如何改进。"
+        },
+        {
+            "question": "你对未来的职业发展有什么规划？",
+            "suggested_answer": "结合个人兴趣和行业发展趋势，展示清晰的职业目标和为之努力的计划。"
+        },
+        {
+            "question": "你有什么问题想问我们吗？",
+            "suggested_answer": "准备2-3个有深度的问题，体现你对公司和岗位的思考，例如关于团队文化、项目挑战或个人成长机会。"
+        }
+    ][:num_questions] # Slice to get dynamic number of questions
+
+    return jsonify({"qa_list": mock_qa_list}), 200
+
+
 @app.route('/opportunity/<int:opportunity_id>/generate_resume', methods=['POST'])
 def generate_resume(opportunity_id):
     import time
