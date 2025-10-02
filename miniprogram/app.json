@@ -2,6 +2,7 @@
   "pages": [
     "pages/dashboard/dashboard",
     "pages/opportunities/opportunities",
+    "pages/opportunity-detail/opportunity-detail",
     "pages/profile/profile"
   ],
   "window": {

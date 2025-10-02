@@ -238,5 +238,12 @@ Page({
 
   onPullDownRefresh: function () {
     this.fetchOpportunities();
+  },
+
+  navigateToDetail: function(e) {
+    const opportunityId = e.currentTarget.dataset.id;
+    wx.navigateTo({
+      url: `/pages/opportunity-detail/opportunity-detail?id=${opportunityId}`
+    });
   }
 });

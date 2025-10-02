@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "机会详情",
+  "usingComponents": {
+    "towxml": "../../towxml/index"
+  }
+}

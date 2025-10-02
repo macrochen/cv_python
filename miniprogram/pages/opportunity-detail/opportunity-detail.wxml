@@ -1,0 +1,84 @@
+<!--pages/opportunity-detail/opportunity-detail.wxml-->
+<view class="page-container">
+  <!-- Header -->
+  <view class="header-section">
+    <text class="position-title">{{opportunity.position_name}}</text>
+    <text class="company-name">{{opportunity.company_name}}</text>
+  </view>
+
+  <!-- Main AI Actions -->
+  <view class="actions-container">
+    <view class="action-card resume">
+      <text class="action-icon">✨</text>
+      <view class="action-text">
+        <text class="action-title">AI 生成定制简历</text>
+        <text class="action-subtitle">根据JD和你的背景，量身打造</text>
+      </view>
+    </view>
+    <view class="action-card practice">
+      <text class="action-icon">🎙️</text>
+      <view class="action-text">
+        <text class="action-title">AI 进行面试演练</text>
+        <text class="action-subtitle">模拟实战，预测问题并练习</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Secondary Content (Tabs) -->
+  <view class="tabs-container">
+    <scroll-view scroll-x class="tab-bar">
+      <view class="tab-item" style="{{activeTab === 'details' ? 'color: #3b82f6; font-weight: 600; border-bottom-color: #3b82f6;' : ''}}" data-tab="details" bindtap="switchTab">职位详情</view>
+      <view class="tab-item" style="{{activeTab === 'resume' ? 'color: #3b82f6; font-weight: 600; border-bottom-color: #3b82f6;' : ''}}" data-tab="resume" bindtap="switchTab">简历详情</view>
+      <view class="tab-item" style="{{activeTab === 'qa' ? 'color: #3b82f6; font-weight: 600; border-bottom-color: #3b82f6;' : ''}}" data-tab="qa" bindtap="switchTab">问答详情</view>
+      <view class="tab-item" style="{{activeTab === 'report' ? 'color: #3b82f6; font-weight: 600; border-bottom-color: #3b82f6;' : ''}}" data-tab="report" bindtap="switchTab">评估报告</view>
+    </scroll-view>
+
+    <view class="tab-content-container">
+      <!-- Position Details Tab -->
+      <view class="tab-content" hidden="{{activeTab !== 'details'}}">
+        <view class="card">
+          <towxml nodes="{{jdMarkdown}}"/>
+
+          <!-- AI Analyze JD Button -->
+          <button class="analyze-jd-btn" bindtap="handleAnalyzeJd" disabled="{{isAnalyzingJd}}">
+            <block wx:if="{{isAnalyzingJd}}">AI分析中...</block>
+            <block wx:else>AI分析JD</block>
+          </button>
+
+          <!-- JD Analysis Results -->
+          <view class="jd-analysis-results" wx:if="{{jdAnalysisResult}}">
+            <view class="jd-keywords-analysis">
+              <text class="analysis-title">核心关键词</text>
+              <view class="keywords-list">
+                <block wx:for="{{jdAnalysisResult.keywords}}" wx:key="*this">
+                  <text class="keyword-tag">{{item}}</text>
+                </block>
+              </view>
+            </view>
+            <view class="resume-pre-match-analysis">
+              <text class="analysis-title">简历预匹配分析</text>
+              <text class="pre-match-text">{{jdAnalysisResult.preMatchText}}</text>
+            </view>
+          </view>
+
+        </view>
+      </view>
+      <!-- Other tabs will be implemented later -->
+      <view class="tab-content" hidden="{{activeTab !== 'resume'}}">
+        <view class="card placeholder-card">
+          <text>简历详情功能待开发</text>
+        </view>
+      </view>
+      <view class="tab-content" hidden="{{activeTab !== 'qa'}}">
+        <view class="card placeholder-card">
+          <text>问答详情功能待开发</text>
+        </view>
+      </view>
+      <view class="tab-content" hidden="{{activeTab !== 'report'}}">
+        <view class="card placeholder-card">
+          <text>评估报告功能待开发</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

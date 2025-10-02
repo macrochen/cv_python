@@ -204,6 +204,52 @@ def delete_opportunity(opportunity_id):
     db.session.commit()
     return jsonify({'message': 'Opportunity deleted'}), 200
 
+
+@app.route('/opportunity/<int:opportunity_id>/analyze_jd', methods=['POST'])
+def analyze_jd(opportunity_id):
+    import time
+    opportunity = Opportunity.query.get(opportunity_id)
+    if not opportunity:
+        return jsonify({'error': 'Opportunity not found'}), 404
+
+    user = User.query.get(opportunity.user_id)
+    if not user:
+        return jsonify({'error': 'User not found for this opportunity'}), 404
+
+    # --- AI Prompt Preparation --- #
+    # This is where we would build the prompt for a real AI call.
+    prompt = f"""
+    请根据以下用户简历和岗位描述（JD），进行深入分析，并以JSON格式返回结果。
+
+    返回的JSON需要包含两个键：
+    1. `keywords`: 一个字符串数组，提取出JD中最重要的5-8个核心关键词。
+    2. `preMatchText`: 一段字符串，分析用户简历和JD的匹配度，并给出优化建议。
+
+    --- 用户简历 ---
+    {user.profile_content}
+
+    --- 岗位描述 (JD) ---
+    {opportunity.job_description}
+    """
+
+    # For now, we print the prompt to show it's ready for a real AI call.
+    print("--- Generated AI Prompt ---")
+    print(prompt)
+    print("---------------------------")
+
+    # --- Mock AI Call --- #
+    # Simulate the delay of a real AI API call
+    time.sleep(2)
+
+    # Return a hardcoded mock response
+    mock_response = {
+        "keywords": ["Python", "Flask", "React", "数据分析", "机器学习", "团队协作"],
+        "preMatchText": "[模拟结果] 您的简历与该岗位匹配度较高。您的Python和Flask技能非常吻合。建议在简历中更具体地描述您在React项目中的角色和贡献，以进一步提升竞争力。"
+    }
+
+    return jsonify(mock_response), 200
+
+
 @app.route('/')
 def hello_world():
     return 'Hello, World!'

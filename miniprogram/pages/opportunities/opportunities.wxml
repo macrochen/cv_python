@@ -24,7 +24,7 @@
   <view wx:else class="opportunities-list">
     <block wx:for="{{opportunities}}" wx:key="id">
       <view class="opportunity-card" data-status="{{item.status}}">
-        <view class="card-content">
+        <view class="card-content" bindtap="navigateToDetail" data-id="{{item.id}}">
           <view class="card-header">
             <text class="position-name">{{item.position_name}}</text>
             <view class="status-badge" data-status="{{item.status}}">{{item.status}}</view>
