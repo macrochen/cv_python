@@ -29,7 +29,12 @@ Page({
     editingResumeMd: '',
     isGeneratingQa: false,
     qaGenerated: false,
-    generatedQA: []
+    generatedQA: [],
+    isPracticeOverlayVisible: false,
+    currentQuestionIndex: 0,
+    practiceState: 'initial', // 'initial', 'recording', 'feedback'
+    timer: '00:00',
+    aiFeedback: ''
   },
 
   onLoad: function (options) {
@@ -59,11 +64,23 @@ Page({
             resumeMarkdown = towxml.toJson(generatedResumeMd);
           }
 
+          const generatedQaJson = res.data.generated_qa_json || null;
+          let generatedQA = [];
+          if (generatedQaJson) {
+            try {
+              generatedQA = JSON.parse(generatedQaJson);
+            } catch (e) {
+              console.error("Error parsing generated_qa_json:", e);
+            }
+          }
+
           this.setData({ 
             opportunity: res.data,
             jdMarkdown: jdMarkdown,
             generatedResumeMd: generatedResumeMd,
-            resumeMarkdown: resumeMarkdown
+            resumeMarkdown: resumeMarkdown,
+            generatedQA: generatedQA,
+            qaGenerated: generatedQA.length > 0 // Set qaGenerated flag
           });
         } else {
           wx.showToast({
@@ -82,6 +99,14 @@ Page({
     const tab = e.currentTarget.dataset.tab;
     if (tab !== this.data.activeTab) {
       this.setData({ activeTab: tab });
+
+      // Workaround for auto-height textareas not rendering correctly after tab switch
+      if (tab === 'qa') {
+        setTimeout(() => {
+          // Force a re-render of the Q&A list to trigger auto-height recalculation
+          this.setData({ generatedQA: [...this.data.generatedQA] });
+        }, 50);
+      }
     }
   },
 
@@ -184,6 +209,26 @@ Page({
 
   // --- AI Interview Practice --- //
   handleGeneratePractice: function() {
+    // Check if Q&A already exists
+    if (this.data.qaGenerated) {
+      wx.showModal({
+        title: '重新生成问题',
+        content: '该机会已存在面试问题，是否重新生成？重新生成将覆盖原有内容。',
+        success: (res) => {
+          if (res.confirm) {
+            this._callGenerateQaApi();
+          } else {
+            wx.showToast({ title: '已取消生成', icon: 'none' });
+            this.setData({ isGeneratingQa: false }); // Ensure loading state is reset if it was set
+          }
+        }
+      });
+    } else {
+      this._callGenerateQaApi();
+    }
+  },
+
+  _callGenerateQaApi: function() {
     this.setData({ isGeneratingQa: true, qaGenerated: false });
 
     const id = this.data.opportunityId;
@@ -197,7 +242,8 @@ Page({
           this.setData({
             qaGenerated: true,
             generatedQA: res.data.qa_list,
-            activeTab: 'qa' // Switch to Q&A tab
+            activeTab: 'qa',
+            'opportunity.generated_qa_json': JSON.stringify(res.data.qa_list) // Update the opportunity object
           });
         } else {
           wx.showToast({ title: '生成问题失败', icon: 'error' });
@@ -213,9 +259,88 @@ Page({
   },
 
   startPractice: function() {
-    console.log("Starting practice with generated QA:", this.data.generatedQA);
-    wx.showToast({ title: '面试演练功能待开发', icon: 'none' });
-    // Full practice overlay implementation will go here
+    this.setData({
+      isPracticeOverlayVisible: true,
+      currentQuestionIndex: 0,
+      practiceState: 'initial',
+      timer: '00:00',
+      aiFeedback: ''
+    });
+    this.displayQuestion();
+  },
+
+  displayQuestion: function() {
+    const { generatedQA, currentQuestionIndex } = this.data;
+    if (generatedQA.length > 0 && currentQuestionIndex < generatedQA.length) {
+      this.setData({
+        practiceState: 'initial',
+        timer: '00:00',
+        aiFeedback: ''
+      });
+    }
+  },
+
+  startRecording: function() {
+    this.setData({ practiceState: 'recording' });
+    // Simulate recording timer
+    let seconds = 0;
+    this.recordingInterval = setInterval(() => {
+      seconds++;
+      const minutes = Math.floor(seconds / 60);
+      const remainingSeconds = seconds % 60;
+      const timerString = `${minutes < 10 ? '0' : ''}${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
+      this.setData({ timer: timerString });
+    }, 1000);
+  },
+
+  stopRecording: function() {
+    clearInterval(this.recordingInterval);
+    this.setData({ practiceState: 'feedback', aiFeedback: '模拟AI反馈：回答得不错，逻辑清晰。可以尝试补充更多数据来支撑你的论点。' });
+  },
+
+  showSuggestedAnswer: function() {
+    const { generatedQA, currentQuestionIndex } = this.data;
+    if (generatedQA.length > 0 && currentQuestionIndex < generatedQA.length) {
+      wx.showModal({
+        title: '建议答案',
+        content: generatedQA[currentQuestionIndex].suggested_answer,
+        showCancel: false
+      });
+    }
+  },
+
+  nextQuestion: function() {
+    const { generatedQA, currentQuestionIndex } = this.data;
+    if (currentQuestionIndex < generatedQA.length - 1) {
+      this.setData({ currentQuestionIndex: currentQuestionIndex + 1 });
+      this.displayQuestion();
+    } else {
+      this.finishInterview(false); // Interview completed normally
+    }
+  },
+
+  closePractice: function() {
+    wx.showModal({
+      title: '结束面试',
+      content: '您确定要提前结束本次面试吗？系统将根据您已完成的回答生成一份评估报告。',
+      success: (res) => {
+        if (res.confirm) {
+          this.finishInterview(true); // Interview interrupted
+        }
+      }
+    });
+  },
+
+  finishInterview: function(isInterrupted = false) {
+    clearInterval(this.recordingInterval);
+    this.setData({ isPracticeOverlayVisible: false });
+    // Here you would typically send answers to backend for evaluation
+    wx.showToast({ title: '面试完成！正在生成评估报告...', icon: 'loading', duration: 2000 });
+    // Simulate report generation and switch to report tab
+    setTimeout(() => {
+      this.setData({ activeTab: 'report' });
+      wx.hideToast();
+    }, 2000);
   },
 
   // --- Q&A List Management --- //
@@ -245,8 +370,30 @@ Page({
   }, 300), // 300ms debounce delay
 
   saveQaList: function() {
-    wx.showToast({ title: '问答列表已保存！', icon: 'success' });
-    // In a real app, this would send data to backend
+    const id = this.data.opportunityId;
+    const backendBaseUrl = app.globalData.backendBaseUrl;
+    const qaListToSave = this.data.generatedQA;
+
+    wx.request({
+      url: `${backendBaseUrl}/opportunity/${id}/update_qa_content`,
+      method: 'PUT',
+      data: {
+        qa_list: qaListToSave
+      },
+      success: (res) => {
+        if (res.statusCode === 200) {
+          this.setData({
+            'opportunity.generated_qa_json': JSON.stringify(qaListToSave) // Update the opportunity object
+          });
+          wx.showToast({ title: '问答列表已保存！', icon: 'success' });
+        } else {
+          wx.showToast({ title: '保存失败', icon: 'error' });
+        }
+      },
+      fail: () => {
+        wx.showToast({ title: '网络错误', icon: 'error' });
+      }
+    });
   },
 
   deleteQa: function(e) {

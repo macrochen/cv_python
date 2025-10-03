@@ -5,6 +5,7 @@ import os
 from datetime import datetime
 import markdown # Moved to top
 from xhtml2pdf import pisa # Moved to top
+import json # Added for Q&A persistence
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -49,6 +50,7 @@ class Opportunity(db.Model):
     status = db.Column(db.String(50)) # e.g., '待投递', '面试中', '已发Offer'
     latest_progress = db.Column(db.String(255))
     generated_resume_md = db.Column(db.Text) # New field for generated resume
+    generated_qa_json = db.Column(db.Text) # New field for generated Q&A
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -66,6 +68,7 @@ class Opportunity(db.Model):
             'status': self.status,
             'latest_progress': self.latest_progress,
             'generated_resume_md': self.generated_resume_md,
+            'generated_qa_json': self.generated_qa_json,
             'created_at': self.created_at.isoformat(),
             'updated_at': self.updated_at.isoformat()
         }
@@ -314,7 +317,28 @@ def generate_qa(opportunity_id):
         }
     ][:num_questions] # Slice to get dynamic number of questions
 
+    opportunity.generated_qa_json = json.dumps(mock_qa_list) # Save to database as JSON string
+    db.session.commit()
+
     return jsonify({"qa_list": mock_qa_list}), 200
+
+
+@app.route('/opportunity/<int:opportunity_id>/update_qa_content', methods=['PUT'])
+def update_qa_content(opportunity_id):
+    opportunity = Opportunity.query.get(opportunity_id)
+    if not opportunity:
+        return jsonify({'error': 'Opportunity not found'}), 404
+
+    data = request.get_json()
+    qa_list = data.get('qa_list')
+
+    if qa_list is None:
+        return jsonify({'error': 'Q&A list is required'}), 400
+
+    opportunity.generated_qa_json = json.dumps(qa_list) # Save as JSON string
+    db.session.commit()
+
+    return jsonify({'message': 'Q&A content updated successfully'}), 200
 
 
 @app.route('/opportunity/<int:opportunity_id>/generate_resume', methods=['POST'])

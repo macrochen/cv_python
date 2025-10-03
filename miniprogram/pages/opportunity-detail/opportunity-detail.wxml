@@ -127,11 +127,49 @@
       <view class="tab-content" hidden="{{activeTab !== 'report'}}">
         <view class="card placeholder-card">
           <text>评估报告功能待开发</text>
+              </view>
+            </view>
+        
+            <!-- Practice Overlay -->
+            <view wx:if="{{isPracticeOverlayVisible}}" class="practice-overlay">
+              <!-- Header -->
+              <view class="practice-header">
+                <text class="practice-status">面试演练中 ({{currentQuestionIndex + 1}}/{{generatedQA.length}})</text>
+                <text class="close-practice-btn" bindtap="closePractice">×</text>
+              </view>
+        
+              <!-- Main Content -->
+              <view class="practice-main-content">
+                <text class="practice-question">{{generatedQA[currentQuestionIndex].question}}</text>
+        
+                        <!-- Initial State -->
+                        <view wx:if="{{practiceState === 'initial'}}" class="practice-state-initial">
+          <view class="start-recording-btn" bindtap="startRecording">
+            <image class="icon-image" src="/images/microphone.png"></image>
+            <text class="text">开始回答</text>
+          </view>                        </view>        
+                <!-- Recording State -->
+                <view wx:if="{{practiceState === 'recording'}}" class="practice-state-recording">
+                  <text class="recording-text">正在录音中... <text class="timer">{{timer}}</text></text>
+                  <button class="stop-recording-btn" bindtap="stopRecording">■</button>
+                </view>
+        
+                <!-- Feedback State -->
+                <view wx:if="{{practiceState === 'feedback'}}" class="practice-state-feedback">
+                  <text class="feedback-title">AI 反馈:</text>
+                  <text class="ai-feedback-text">{{aiFeedback}}</text>
+                </view>
+              </view>
+        
+              <!-- Footer -->
+              <view class="practice-footer">
+                <button class="show-answer-btn" bindtap="showSuggestedAnswer">查看建议答案</button>
+                <button class="next-question-btn" bindtap="nextQuestion">{{currentQuestionIndex === generatedQA.length - 1 ? '完成面试，查看评估' : '下一题 →'}}</button>
+              </view>
+            </view>
+        
+          </view>
         </view>
-      </view>
-    </view>
-  </view>
-
   <!-- Keyword Input Modal -->
   <view wx:if="{{isKeywordModalVisible}}" class="modal-backdrop" bindtap="hideKeywordModal">
     <view class="modal-panel keyword-modal" catchtap="doNothing">
