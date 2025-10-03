@@ -276,7 +276,7 @@ Page({
             try {
               const parsedQa = JSON.parse(generatedQaJson);
               generatedQA = parsedQa.map(item => ({
-                question_text: item.question !== undefined ? item.question : '',
+                question_text: (item.question_text !== undefined ? item.question_text : item.question) || '',
                 suggested_answer: item.suggested_answer !== undefined ? item.suggested_answer : ''
               }));
             } catch (e) {
@@ -457,7 +457,7 @@ Page({
         if (res.statusCode === 200 && res.data.qa_list) {
           this.setData({
             generatedQaList: res.data.qa_list.map(item => ({
-              question_text: item.question !== undefined ? item.question : '',
+              question_text: (item.question_text !== undefined ? item.question_text : item.question) || '',
               suggested_answer: item.suggested_answer !== undefined ? item.suggested_answer : ''
             })),
             activeTab: 'qa',
@@ -494,7 +494,7 @@ Page({
           this.setData({
             currentInterviewSessionId: res.data.id, // Store the new session ID
             generatedQaList: res.data.session_answers.map(item => ({
-              question_text: item.question !== undefined ? item.question : '',
+              question_text: (item.question_text !== undefined ? item.question_text : item.question) || '',
               suggested_answer: item.suggested_answer !== undefined ? item.suggested_answer : ''
             })), // Use questions from the new session
             isPracticeOverlayVisible: true,
