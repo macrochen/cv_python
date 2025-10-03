@@ -13,34 +13,254 @@ function debounce(func, delay) {
 }
 
 Page({
-  data: {
-    opportunityId: null,
-    opportunity: null,
-    jdMarkdown: {}, // For towxml component
-    activeTab: 'details', // To control the active tab
-    isAnalyzingJd: false,
-    jdAnalysisResult: null,
-    isKeywordModalVisible: false,
-    resumeKeywords: '',
-    isGeneratingResume: false,
-    generatedResumeMd: null,
-    resumeMarkdown: {},
-    isEditingResume: false,
-    editingResumeMd: '',
-    isGeneratingQa: false,
-    qaGenerated: false,
-    generatedQA: [],
-    isPracticeOverlayVisible: false,
-    currentQuestionIndex: 0,
-    practiceState: 'initial', // 'initial', 'recording', 'feedback'
-    timer: '00:00',
-    aiFeedback: ''
-  },
+    data: {
+        opportunityId: null,
+        opportunity: null,
+        jdMarkdown: {},
+        resumeMarkdown: {},
+        tabs: [
+            { title: "职位详情", key: "details" },
+            { title: "AI简历", key: "resume" },
+            { title: "AI问答", key: "qa" },
+            { title: "面试评估", key: "report" } // New tab with key
+        ],
+        activeTab: 'details',
+        jdAnalysisResult: null,
+        generatedResumeMd: '',
+        generatedQaList: [],
+        latestInterviewSession: null,
+        historicalInterviewSessions: [],
+        selectedSessionAnswers: [],
+        reportSummaryRichText: null, // New data property for rich text summary
+        radarChartDataFormatted: '暂无数据', // New data property for formatted radar data
+        activeHistoricalSessionId: null, // New data property to track active historical session
+        showEditResumeDialog: false,
+        editResumeContent: '',
+        showEditQaDialog: false,
+        editQaList: [],
+        toptips: '',
+        showActionSheet: false,
+        actions: [
+            { name: '下载PDF', value: 'download' }
+        ]
+    },
+
+    // Helper to show toast messages
+    showToast(title, icon = 'none', duration = 2000) {
+        wx.showToast({
+            title,
+            icon,
+            duration
+        });
+    },
+
+    // Function to fetch interview evaluation data
+    getInterviewEvaluationData() {
+        const opportunityId = this.data.opportunityId;
+        if (!opportunityId) return;
+
+        const towxml = new Towxml(); // Initialize Towxml
+
+        // Fetch latest interview session
+        wx.request({
+            url: `http://127.0.0.1:5000/opportunity/${opportunityId}/interview_sessions/latest`,
+            method: 'GET',
+            success: (res) => {
+                if (res.statusCode === 200 && res.data.id) {
+                    const latestSession = res.data;
+                    
+                    // Convert report_summary to rich text
+                    latestSession.reportSummaryRichText = towxml.toJson(latestSession.report_summary || '');
+
+                    // Convert ai_feedback in session_answers to rich text
+                    latestSession.session_answers.forEach(answer => {
+                        answer.aiFeedbackRichText = towxml.toJson(answer.ai_feedback || '');
+                    });
+
+                    // Format radar_chart_data
+                    let radarChartDataFormatted = '暂无数据';
+                    let radarChartDataArray = [];
+                    if (latestSession.radar_chart_data) {
+                        console.log('getInterviewEvaluationData: latestSession.radar_chart_data:', latestSession.radar_chart_data);
+                        try {
+                            const radarData = latestSession.radar_chart_data;
+                            radarChartDataArray = Object.entries(radarData)
+                                .map(([key, value]) => ({ key: key, value: value }));
+                            radarChartDataFormatted = radarChartDataArray
+                                .map(item => `${item.key}: ${item.value}分`)
+                                .join('\n');
+                        } catch (e) {
+                            console.error("Error parsing radar_chart_data:", e);
+                        }
+                    }
+                    console.log('getInterviewEvaluationData: radarChartDataArray:', radarChartDataArray);
+
+                    latestSession.radarChartDataArray = radarChartDataArray; // Add to latestSession
+
+                    this.setData({
+                        latestInterviewSession: latestSession,
+                        selectedSessionAnswers: latestSession.session_answers,
+                        reportSummaryRichText: latestSession.reportSummaryRichText,
+                        radarChartDataFormatted: radarChartDataFormatted,
+                        'latestInterviewSession.radar_chart_data_array': radarChartDataArray,
+                        activeHistoricalSessionId: latestSession.id // Set active ID for initial latest session
+                    });
+                } else if (res.statusCode === 200 && res.data.message === 'No interview sessions found for this opportunity') {
+                    this.setData({
+                        latestInterviewSession: null,
+                        selectedSessionAnswers: [],
+                        reportSummaryRichText: null,
+                        radarChartDataFormatted: '暂无数据'
+                    });
+                } else {
+                    console.error('Failed to fetch latest interview session:', res);
+                    this.showToast('获取最新评估失败', 'error');
+                }
+            },
+            fail: (err) => {
+                console.error('Request failed:', err);
+                this.showToast('网络错误', 'error');
+            }
+        });
+
+        // Fetch historical interview sessions
+        wx.request({
+            url: `http://127.0.0.1:5000/opportunity/${opportunityId}/interview_sessions`,
+            method: 'GET',
+            success: (res) => {
+                if (res.statusCode === 200) {
+                    const sortedSessions = res.data.sort((a, b) => new Date(b.session_date) - new Date(a.session_date));
+                    
+                    // Format radar_chart_data for historical sessions as well
+                    sortedSessions.forEach(session => {
+                        session.formatted_session_date = new Date(session.session_date).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+                        if (session.radar_chart_data) {
+                            try {
+                                const radarData = session.radar_chart_data;
+                                session.radarChartDataFormatted = Object.entries(radarData)
+                                    .map(([key, value]) => `${key}: ${value}分`)
+                                    .join(', '); // Use comma for historical list display
+                            } catch (e) {
+                                console.error("Error parsing historical radar_chart_data:", e);
+                            }
+                        }
+                    });
+
+                    this.setData({
+                        historicalInterviewSessions: sortedSessions
+                    });
+                } else {
+                    console.error('Failed to fetch historical interview sessions:', res);
+                    this.showToast('获取历史评估失败', 'error');
+                }
+            },
+            fail: (err) => {
+                console.error('Request failed:', err);
+                this.showToast('网络错误', 'error');
+            }
+        });
+    },
+
+    // Function to load a specific historical session
+    loadHistoricalSession(e) {
+        const sessionId = e.currentTarget.dataset.sessionId;
+        const towxml = new Towxml();
+
+        // Clear previous data to ensure clean state
+        this.setData({
+            latestInterviewSession: null,
+            selectedSessionAnswers: [],
+            reportSummaryRichText: null,
+            radarChartDataFormatted: '暂无数据',
+            'latestInterviewSession.radar_chart_data_array': []
+        });
+
+        wx.request({
+            url: `http://127.0.0.1:5000/interview_session/${sessionId}`,
+            method: 'GET',
+            success: (res) => {
+                if (res.statusCode === 200) {
+                    const selectedSession = res.data;
+                    selectedSession.formatted_session_date = new Date(selectedSession.session_date).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+
+                    // Convert report_summary to rich text
+                    selectedSession.reportSummaryRichText = towxml.toJson(selectedSession.report_summary || '');
+
+                    // Convert ai_feedback in session_answers to rich text
+                    selectedSession.session_answers.forEach(answer => {
+                        answer.aiFeedbackRichText = towxml.toJson(answer.ai_feedback || '');
+                    });
+
+                    // Format radar_chart_data
+                    let radarChartDataFormatted = '暂无数据';
+                    let radarChartDataArray = [];
+                    if (selectedSession.radar_chart_data) {
+                        console.log('loadHistoricalSession: selectedSession.radar_chart_data:', selectedSession.radar_chart_data);
+                        try {
+                            const radarData = selectedSession.radar_chart_data;
+                            radarChartDataArray = Object.entries(radarData)
+                                .map(([key, value]) => ({ key: key, value: value }));
+                            radarChartDataFormatted = radarChartDataArray
+                                .map(item => `${item.key}: ${item.value}分`)
+                                .join('\n');
+                        } catch (e) {
+                            console.error("Error parsing radar_chart_data:", e);
+                        }
+                    }
+                    console.log('loadHistoricalSession: radarChartDataArray:', radarChartDataArray);
+
+                    selectedSession.radarChartDataArray = radarChartDataArray; // Add to selectedSession
+
+                    this.setData({
+                        'latestInterviewSession.overall_score': selectedSession.overall_score,
+                        'latestInterviewSession.report_summary': selectedSession.report_summary,
+                        'latestInterviewSession.radar_chart_data': selectedSession.radar_chart_data,
+                        selectedSessionAnswers: selectedSession.session_answers,
+                        reportSummaryRichText: selectedSession.reportSummaryRichText,
+                        radarChartDataFormatted: radarChartDataFormatted,
+                        'latestInterviewSession.radar_chart_data_array': radarChartDataArray,
+                        activeHistoricalSessionId: sessionId // Set active ID for clicked historical session
+                    });
+                } else {
+                    console.error('Failed to fetch historical session:', res);
+                    this.showToast('获取历史会话失败', 'error');
+                }
+            },
+            fail: (err) => {
+                console.error('Request failed:', err);
+                this.showToast('网络错误', 'error');
+            }
+        });
+    },
 
   onLoad: function (options) {
+    // Initialize recorder manager
+    const recorderManager = wx.getRecorderManager();
+    recorderManager.onStop((res) => {
+      console.log('Recorder stopped', res);
+      this.setData({ recordedTempFilePath: res.tempFilePath });
+      // This part needs to be updated to send to the correct backend endpoint for session answers
+      // For now, it's commented out or needs a placeholder
+      // this.sendAudioForEvaluation(res.tempFilePath);
+    });
+    recorderManager.onError((res) => {
+      console.error('Recorder error', res);
+      wx.showToast({ title: '录音失败', icon: 'error' });
+      this.setData({ practiceState: 'initial' });
+    });
+    this.setData({ recorderManager: recorderManager });
+
     if (options.id) {
       this.setData({ opportunityId: options.id });
       this.fetchOpportunityDetail();
+    }
+  },
+
+  onShow: function () {
+    if (this.data.opportunityId) {
+      this.fetchOpportunityDetail();
+      // Also refresh interview evaluation data on show
+      this.getInterviewEvaluationData();
     }
   },
 
@@ -53,6 +273,7 @@ Page({
       url: `${backendBaseUrl}/opportunity/${id}`,
       method: 'GET',
       success: (res) => {
+        let generatedQA = []; // Declare generatedQA at the beginning of the success callback
         if (res.statusCode === 200) {
           const towxml = new Towxml();
           const jdContent = res.data.job_description || '暂无职位描述';
@@ -68,7 +289,11 @@ Page({
           let generatedQA = [];
           if (generatedQaJson) {
             try {
-              generatedQA = JSON.parse(generatedQaJson);
+              const parsedQa = JSON.parse(generatedQaJson);
+              generatedQA = parsedQa.map(item => ({
+                question_text: item.question, // Map 'question' to 'question_text'
+                suggested_answer: item.suggested_answer
+              }));
             } catch (e) {
               console.error("Error parsing generated_qa_json:", e);
             }
@@ -79,8 +304,7 @@ Page({
             jdMarkdown: jdMarkdown,
             generatedResumeMd: generatedResumeMd,
             resumeMarkdown: resumeMarkdown,
-            generatedQA: generatedQA,
-            qaGenerated: generatedQA.length > 0 // Set qaGenerated flag
+            generatedQaList: generatedQA
           });
         } else {
           wx.showToast({
@@ -100,15 +324,22 @@ Page({
     if (tab !== this.data.activeTab) {
       this.setData({ activeTab: tab });
 
+      // If the 'report' tab is clicked, fetch evaluation data
+      if (tab === 'report') {
+        this.getInterviewEvaluationData();
+      }
+
       // Workaround for auto-height textareas not rendering correctly after tab switch
       if (tab === 'qa') {
         setTimeout(() => {
           // Force a re-render of the Q&A list to trigger auto-height recalculation
-          this.setData({ generatedQA: [...this.data.generatedQA] });
+          this.setData({ generatedQaList: [...this.data.generatedQaList] });
         }, 50);
       }
     }
   },
+
+
 
   handleAnalyzeJd: function() {
     this.setData({ isAnalyzingJd: true, jdAnalysisResult: null });
@@ -210,7 +441,7 @@ Page({
   // --- AI Interview Practice --- //
   handleGeneratePractice: function() {
     // Check if Q&A already exists
-    if (this.data.qaGenerated) {
+    if (this.data.generatedQaList.length > 0) {
       wx.showModal({
         title: '重新生成问题',
         content: '该机会已存在面试问题，是否重新生成？重新生成将覆盖原有内容。',
@@ -229,7 +460,7 @@ Page({
   },
 
   _callGenerateQaApi: function() {
-    this.setData({ isGeneratingQa: true, qaGenerated: false });
+    this.setData({ isGeneratingQa: true });
 
     const id = this.data.opportunityId;
     const backendBaseUrl = app.globalData.backendBaseUrl;
@@ -240,8 +471,7 @@ Page({
       success: (res) => {
         if (res.statusCode === 200 && res.data.qa_list) {
           this.setData({
-            qaGenerated: true,
-            generatedQA: res.data.qa_list,
+            generatedQaList: res.data.qa_list,
             activeTab: 'qa',
             'opportunity.generated_qa_json': JSON.stringify(res.data.qa_list) // Update the opportunity object
           });
@@ -259,19 +489,46 @@ Page({
   },
 
   startPractice: function() {
-    this.setData({
-      isPracticeOverlayVisible: true,
-      currentQuestionIndex: 0,
-      practiceState: 'initial',
-      timer: '00:00',
-      aiFeedback: ''
+    const opportunityId = this.data.opportunityId;
+    const backendBaseUrl = app.globalData.backendBaseUrl;
+
+    wx.showLoading({
+      title: '正在创建面试会话...',
+      mask: true
     });
-    this.displayQuestion();
+
+    wx.request({
+      url: `${backendBaseUrl}/opportunity/${opportunityId}/interview_sessions`,
+      method: 'POST',
+      success: (res) => {
+        wx.hideLoading();
+        if (res.statusCode === 201 && res.data.id) {
+          this.setData({
+            currentInterviewSessionId: res.data.id, // Store the new session ID
+            generatedQaList: res.data.session_answers, // Use questions from the new session
+            isPracticeOverlayVisible: true,
+            currentQuestionIndex: 0,
+            practiceState: 'initial',
+            timer: '00:00',
+            aiFeedback: ''
+          });
+          this.displayQuestion();
+        } else {
+          wx.showToast({ title: '创建面试会话失败', icon: 'error' });
+          console.error('Failed to create interview session:', res);
+        }
+      },
+      fail: (err) => {
+        wx.hideLoading();
+        wx.showToast({ title: '网络错误', icon: 'error' });
+        console.error('Request failed:', err);
+      }
+    });
   },
 
   displayQuestion: function() {
-    const { generatedQA, currentQuestionIndex } = this.data;
-    if (generatedQA.length > 0 && currentQuestionIndex < generatedQA.length) {
+    const { generatedQaList, currentQuestionIndex } = this.data;
+    if (generatedQaList.length > 0 && currentQuestionIndex < generatedQaList.length) {
       this.setData({
         practiceState: 'initial',
         timer: '00:00',
@@ -282,6 +539,15 @@ Page({
 
   startRecording: function() {
     this.setData({ practiceState: 'recording' });
+    const recorderManager = this.data.recorderManager;
+    recorderManager.start({
+      duration: 60000, // Max 1 minute
+      sampleRate: 16000,
+      numberOfChannels: 1,
+      encodeBitRate: 96000,
+      format: 'mp3',
+      frameSize: 50
+    });
     // Simulate recording timer
     let seconds = 0;
     this.recordingInterval = setInterval(() => {
@@ -294,24 +560,72 @@ Page({
   },
 
   stopRecording: function() {
+    console.log("stopRecording function called.");
     clearInterval(this.recordingInterval);
-    this.setData({ practiceState: 'feedback', aiFeedback: '模拟AI反馈：回答得不错，逻辑清晰。可以尝试补充更多数据来支撑你的论点。' });
+    this.data.recorderManager.stop(); // onStop event will trigger sendAudioForEvaluation
+  },
+
+  sendAudioForEvaluation: function(filePath) {
+    wx.showLoading({
+      title: '正在转写并评估...',
+      mask: true
+    });
+
+    const currentInterviewSessionId = this.data.currentInterviewSessionId;
+    const backendBaseUrl = app.globalData.backendBaseUrl;
+    const currentQuestion = this.data.generatedQaList[this.data.currentQuestionIndex];
+
+    // Simulate transcription for now
+    const mockTranscript = "[模拟转写] " + (Math.random() > 0.5 ? "您的回答很清晰，表达流畅。" : "您的回答有些犹豫，可以更自信一些。");
+
+    wx.request({
+      url: `${backendBaseUrl}/interview_session/${currentInterviewSessionId}/answer`,
+      method: 'POST',
+      header: {
+        'Content-Type': 'application/json'
+      },
+      data: {
+        question_text: currentQuestion.question,
+        user_answer_transcript: mockTranscript, // Using mock transcript for now
+        user_audio_url: filePath // Pass the recorded audio file path
+      },
+      success: (res) => {
+        wx.hideLoading();
+        if (res.statusCode === 200) {
+          this.setData({
+            userAnswerTranscript: res.data.user_answer_transcript,
+            aiFeedback: res.data.ai_feedback,
+            practiceState: 'feedback'
+          });
+        } else {
+          wx.showToast({ title: '评估失败', icon: 'error' });
+          console.error("Evaluation failed: ", res);
+          this.setData({ practiceState: 'initial' });
+        }
+      },
+      fail: (err) => {
+        wx.hideLoading();
+        wx.showToast({ title: '网络错误', icon: 'error' });
+        console.error("Network error during evaluation: ", err);
+        this.setData({ practiceState: 'initial' });
+      }
+    });
   },
 
   showSuggestedAnswer: function() {
-    const { generatedQA, currentQuestionIndex } = this.data;
-    if (generatedQA.length > 0 && currentQuestionIndex < generatedQA.length) {
+    const { generatedQaList, currentQuestionIndex } = this.data;
+    if (generatedQaList.length > 0 && currentQuestionIndex < generatedQaList.length) {
       wx.showModal({
         title: '建议答案',
-        content: generatedQA[currentQuestionIndex].suggested_answer,
+        content: generatedQaList[currentQuestionIndex].suggested_answer,
         showCancel: false
       });
     }
   },
 
   nextQuestion: function() {
-    const { generatedQA, currentQuestionIndex } = this.data;
-    if (currentQuestionIndex < generatedQA.length - 1) {
+    const { generatedQaList, currentQuestionIndex } = this.data;
+    if (currentQuestionIndex < generatedQaList.length - 1) {
       this.setData({ currentQuestionIndex: currentQuestionIndex + 1 });
       this.displayQuestion();
     } else {
@@ -334,27 +648,49 @@ Page({
   finishInterview: function(isInterrupted = false) {
     clearInterval(this.recordingInterval);
     this.setData({ isPracticeOverlayVisible: false });
-    // Here you would typically send answers to backend for evaluation
-    wx.showToast({ title: '面试完成！正在生成评估报告...', icon: 'loading', duration: 2000 });
-    // Simulate report generation and switch to report tab
-    setTimeout(() => {
-      this.setData({ activeTab: 'report' });
-      wx.hideToast();
-    }, 2000);
+
+    const currentInterviewSessionId = this.data.currentInterviewSessionId;
+    const backendBaseUrl = app.globalData.backendBaseUrl;
+
+    wx.showLoading({
+      title: '正在生成评估报告...',
+      mask: true
+    });
+
+    wx.request({
+      url: `${backendBaseUrl}/interview_session/${currentInterviewSessionId}/finish`,
+      method: 'PUT',
+      success: (res) => {
+        wx.hideLoading();
+        if (res.statusCode === 200) {
+          wx.showToast({ title: '评估报告已生成！', icon: 'success' });
+          this.setData({ activeTab: 'report' });
+          this.getInterviewEvaluationData(); // Fetch the newly generated report
+        } else {
+          wx.showToast({ title: '生成评估报告失败', icon: 'error' });
+          console.error('Failed to finish interview session:', res);
+        }
+      },
+      fail: (err) => {
+        wx.hideLoading();
+        wx.showToast({ title: '网络错误', icon: 'error' });
+        console.error('Request failed:', err);
+      }
+    });
   },
 
   // --- Q&A List Management --- //
   handleAddQa: function() {
     const newQa = { id: Date.now(), question: '新问题...', suggested_answer: '新答案...' };
     this.setData({
-      generatedQA: [...this.data.generatedQA, newQa]
+      generatedQaList: [...this.data.generatedQaList, newQa]
     });
   },
 
   handleQaInputChange: function(e) {
     const { id, field } = e.currentTarget.dataset;
     const value = e.detail.value;
-    const index = this.data.generatedQA.findIndex(qa => qa.id == id);
+    const index = this.data.generatedQaList.findIndex(qa => qa.id == id);
 
     if (index !== -1) {
       // Debounce the setData call
@@ -364,15 +700,15 @@ Page({
 
   // Debounced version of setting QA data
   _debouncedSetQaData: debounce(function(index, field, value) {
-    const updatedQA = [...this.data.generatedQA];
+    const updatedQA = [...this.data.generatedQaList];
     updatedQA[index][field] = value;
-    this.setData({ generatedQA: updatedQA });
+    this.setData({ generatedQaList: updatedQA });
   }, 300), // 300ms debounce delay
 
   saveQaList: function() {
     const id = this.data.opportunityId;
     const backendBaseUrl = app.globalData.backendBaseUrl;
-    const qaListToSave = this.data.generatedQA;
+    const qaListToSave = this.data.generatedQaList;
 
     wx.request({
       url: `${backendBaseUrl}/opportunity/${id}/update_qa_content`,
@@ -404,7 +740,7 @@ Page({
       success: (res) => {
         if (res.confirm) {
           this.setData({
-            generatedQA: this.data.generatedQA.filter(qa => qa.id != idToDelete)
+            generatedQaList: this.data.generatedQaList.filter(qa => qa.id != idToDelete)
           });
           wx.showToast({ title: '删除成功', icon: 'success' });
         }

@@ -33,7 +33,7 @@
             <text>{{item.company_name}}</text>
           </view>
           <view class="card-footer">
-            <text class="footer-text" decode="{{true}}">{{item.displayProgress}}</text>
+            <text class="footer-text">{{item.displayProgress}}</text>
             <view class="more-actions-btn" bindtap="showMoreActions" data-id="{{item.id}}">...</view>
           </view>
         </view>

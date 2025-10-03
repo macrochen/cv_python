@@ -16,8 +16,9 @@
       </view>
     </view>
     <view class="action-card practice">
-      <view wx:if="{{!qaGenerated}}" class="practice-initial-state">
-        <button id="main-action-practice" class="action-button" bindtap="handleGeneratePractice" disabled="{{isGeneratingQa}}">
+      <view wx:if="{{generatedQaList.length === 0}}" class="practice-initial-state">
+        <button id="main-action-practice" class="action-button" bindtap="handleGeneratePractice"
+          disabled="{{isGeneratingQa}}">
           <text class="action-icon">{{isGeneratingQa ? '⏳' : '🎙️'}}</text>
           <view class="action-text">
             <text class="action-title">{{isGeneratingQa ? 'AI 正在生成问题...' : 'AI 进行面试演练'}}</text>
@@ -25,8 +26,8 @@
           </view>
         </button>
       </view>
-      <view wx:else class="practice-confirm-state">
-        <text class="confirm-text">AI 已为您生成 {{generatedQA.length}} 个高频问题！</text>
+      <view wx:if="{{generatedQaList.length > 0}}" class="practice-confirm-state">
+        <text class="confirm-text">AI 已为您生成 {{generatedQaList.length}} 个高频问题！</text>
         <button class="start-practice-btn" bindtap="startPractice">立即开始</button>
       </view>
     </view>
@@ -35,17 +36,25 @@
   <!-- Secondary Content (Tabs) -->
   <view class="tabs-container">
     <scroll-view scroll-x class="tab-bar">
-      <view class="tab-item" style="{{activeTab === 'details' ? 'color: #3b82f6; font-weight: 600; border-bottom-color: #3b82f6;' : ''}}" data-tab="details" bindtap="switchTab">职位详情</view>
-      <view class="tab-item" style="{{activeTab === 'resume' ? 'color: #3b82f6; font-weight: 600; border-bottom-color: #3b82f6;' : ''}}" data-tab="resume" bindtap="switchTab">简历详情</view>
-      <view class="tab-item" style="{{activeTab === 'qa' ? 'color: #3b82f6; font-weight: 600; border-bottom-color: #3b82f6;' : ''}}" data-tab="qa" bindtap="switchTab">问答详情</view>
-      <view class="tab-item" style="{{activeTab === 'report' ? 'color: #3b82f6; font-weight: 600; border-bottom-color: #3b82f6;' : ''}}" data-tab="report" bindtap="switchTab">评估报告</view>
+      <view class="tab-item"
+        style="{{activeTab === 'details' ? 'color: #3b82f6; font-weight: 600; border-bottom-color: #3b82f6;' : ''}}"
+        data-tab="details" bindtap="switchTab">职位详情</view>
+      <view class="tab-item"
+        style="{{activeTab === 'resume' ? 'color: #3b82f6; font-weight: 600; border-bottom-color: #3b82f6;' : ''}}"
+        data-tab="resume" bindtap="switchTab">简历详情</view>
+      <view class="tab-item"
+        style="{{activeTab === 'qa' ? 'color: #3b82f6; font-weight: 600; border-bottom-color: #3b82f6;' : ''}}"
+        data-tab="qa" bindtap="switchTab">问答详情</view>
+      <view class="tab-item"
+        style="{{activeTab === 'report' ? 'color: #3b82f6; font-weight: 600; border-bottom-color: #3b82f6;' : ''}}"
+        data-tab="report" bindtap="switchTab">评估报告</view>
     </scroll-view>
 
     <view class="tab-content-container">
       <!-- Position Details Tab -->
       <view class="tab-content" hidden="{{activeTab !== 'details'}}">
         <view class="card">
-          <towxml nodes="{{jdMarkdown}}"/>
+          <towxml nodes="{{jdMarkdown}}" />
 
           <!-- AI Analyze JD Button -->
           <button class="analyze-jd-btn" bindtap="handleAnalyzeJd" disabled="{{isAnalyzingJd}}">
@@ -84,17 +93,19 @@
             <view class="resume-content-container">
               <!-- Display Mode -->
               <view wx:if="{{!isEditingResume}}">
-                            <view class="resume-actions">
-                              <button class="resume-btn" bindtap="downloadPdf">下载PDF</button>
-                              <button class="resume-btn secondary" bindtap="editResume">编辑</button>
-                            </view>                <view class="resume-preview">
-                  <towxml nodes="{{resumeMarkdown}}"/>
+                <view class="resume-actions">
+                  <button class="resume-btn" bindtap="downloadPdf">下载PDF</button>
+                  <button class="resume-btn secondary" bindtap="editResume">编辑</button>
+                </view>
+                <view class="resume-preview">
+                  <towxml nodes="{{resumeMarkdown}}" />
                 </view>
               </view>
 
               <!-- Edit Mode -->
               <view wx:if="{{isEditingResume}}">
-                <textarea class="resume-editor" value="{{editingResumeMd}}" bindinput="handleResumeEditorInput" maxlength="20000"></textarea>
+                <textarea class="resume-editor" value="{{editingResumeMd}}" bindinput="handleResumeEditorInput"
+                  maxlength="20000"></textarea>
                 <view class="resume-actions">
                   <button class="resume-btn secondary" bindtap="cancelEditResume">取消</button>
                   <button class="resume-btn" bindtap="saveResume">保存</button>
@@ -106,85 +117,156 @@
       </view>
       <!-- Q&A Tab -->
       <view class="tab-content" hidden="{{activeTab !== 'qa'}}">
-        <view class="qa-controls" wx:if="{{generatedQA.length > 0}}">
+        <view class="qa-controls" wx:if="{{generatedQaList.length > 0}}">
           <button class="qa-btn add" bindtap="handleAddQa">+ 新增问答</button>
           <button class="qa-btn save" bindtap="saveQaList">保存全部修改</button>
         </view>
-        <view wx:if="{{generatedQA.length === 0}}" class="card placeholder-card">
+        <view wx:if="{{generatedQaList.length === 0}}" class="card placeholder-card">
           <text>尚未生成问答。请点击上方的“AI进行面试演练”按钮开始。</text>
         </view>
         <view wx:else class="qa-list-container">
-          <block wx:for="{{generatedQA}}" wx:key="id">
+          <block wx:for="{{generatedQaList}}" wx:key="id">
             <view class="qa-item">
-                              <view class="qa-item-header">
-                                <textarea class="question-input" value="{{item.question}}" bindinput="handleQaInputChange" data-id="{{item.id}}" data-field="question" auto-height></textarea>
-                                <view class="delete-qa-btn" bindtap="deleteQa" data-id="{{item.id}}">×</view>
-                              </view>              <textarea class="answer-input" value="{{item.suggested_answer}}" bindinput="handleQaInputChange" data-id="{{item.id}}" data-field="suggested_answer" auto-height></textarea>
+              <view class="qa-item-header">
+                <textarea class="question-input" value="{{item.question_text}}" bindinput="handleQaInputChange"
+                  data-id="{{item.id}}" data-field="question" auto-height></textarea>
+                <view class="delete-qa-btn" bindtap="deleteQa" data-id="{{item.id}}">×</view>
+              </view> <textarea class="answer-input" value="{{item.suggested_answer}}" bindinput="handleQaInputChange"
+                data-id="{{item.id}}" data-field="suggested_answer" auto-height></textarea>
             </view>
           </block>
         </view>
       </view>
       <view class="tab-content" hidden="{{activeTab !== 'report'}}">
-        <view class="card placeholder-card">
-          <text>评估报告功能待开发</text>
+          <view class="weui-cells__group weui-cells__group_form report-section" wx:if="{{historicalInterviewSessions.length > 0}}">
+            <view class="weui-cells__title">历史面试记录</view>
+            <view class="weui-cells weui-cells_form">
+                          <view class="weui-cell weui-cell_access historical-session-item {{session.id === activeHistoricalSessionId ? 'active' : ''}}" wx:for="{{historicalInterviewSessions}}" wx:for-item="session"
+                            wx:key="id" bindtap="loadHistoricalSession" data-session-id="{{session.id}}">
+                            <text class="active-indicator" wx:if="{{session.id === activeHistoricalSessionId}}">▶</text>
+                            <view class="weui-cell__bd">{{session.formatted_session_date}} - 总分: {{session.overall_score}}</view>                <view class="weui-cell__ft weui-cell__ft_in-access"></view>
               </view>
             </view>
-        
-            <!-- Practice Overlay -->
-            <view wx:if="{{isPracticeOverlayVisible}}" class="practice-overlay">
-              <!-- Header -->
-              <view class="practice-header">
-                <text class="practice-status">面试演练中 ({{currentQuestionIndex + 1}}/{{generatedQA.length}})</text>
-                <text class="close-practice-btn" bindtap="closePractice">×</text>
-              </view>
-        
-              <!-- Main Content -->
-              <view class="practice-main-content">
-                <text class="practice-question">{{generatedQA[currentQuestionIndex].question}}</text>
-        
-                        <!-- Initial State -->
-                        <view wx:if="{{practiceState === 'initial'}}" class="practice-state-initial">
-          <view class="start-recording-btn" bindtap="startRecording">
-            <image class="icon-image" src="/images/microphone.png"></image>
-            <text class="text">开始回答</text>
-          </view>                        </view>        
-                <!-- Recording State -->
-                <view wx:if="{{practiceState === 'recording'}}" class="practice-state-recording">
-                  <text class="recording-text">正在录音中... <text class="timer">{{timer}}</text></text>
-                  <button class="stop-recording-btn" bindtap="stopRecording">■</button>
-                </view>
-        
-                <!-- Feedback State -->
-                <view wx:if="{{practiceState === 'feedback'}}" class="practice-state-feedback">
-                  <text class="feedback-title">AI 反馈:</text>
-                  <text class="ai-feedback-text">{{aiFeedback}}</text>
+          </view>
+
+          <view class="weui-cells__group weui-cells__group_form report-section" wx:if="{{latestInterviewSession}}">
+            <view class="weui-cells weui-cells_form">
+              <view class="weui-cell">
+                <view class="weui-cell__bd">
+                  <view class="weui-label">总分:</view>
+                  <view class="weui-cell__ft score-display">{{latestInterviewSession.overall_score}}</view>
                 </view>
               </view>
-        
-              <!-- Footer -->
-              <view class="practice-footer">
-                <button class="show-answer-btn" bindtap="showSuggestedAnswer">查看建议答案</button>
-                <button class="next-question-btn" bindtap="nextQuestion">{{currentQuestionIndex === generatedQA.length - 1 ? '完成面试，查看评估' : '下一题 →'}}</button>
+              <view class="weui-cell summary-cell">
+                <view class="weui-cell__bd">
+                  <view class="weui-label">总结:</view>
+                  <view class="report-summary-content">
+                    <towxml nodes="{{reportSummaryRichText}}" />
+                  </view>
+                </view>
+              </view>
+              <view class="weui-cell radar-data-cell">
+                <view class="weui-cell__bd">
+                  <view class="weui-label">能力得分:</view>
+                  <view class="radar-chart-container" wx:if="{{latestInterviewSession.radar_chart_data_array && latestInterviewSession.radar_chart_data_array.length > 0}}">
+                    <block wx:for="{{latestInterviewSession.radar_chart_data_array}}" wx:for-item="item" wx:key="key">
+                      <view class="radar-skill-item">
+                        <text class="skill-name">{{item.key}}</text>
+                        <view class="skill-bar-background">
+                          <view class="skill-bar-fill" style="width: {{item.value}}%;"></view>
+                          <text class="skill-score">{{item.value}}</text>
+                        </view>
+                      </view>
+                    </block>
+                  </view>
+                  <text wx:else class="radar-data-text">暂无能力得分数据。</text>
+                </view>
               </view>
             </view>
-        
+          </view>
+          <view class="weui-cell" wx:else>
+            <view class="weui-cell__bd">
+              <view class="weui-label">暂无面试评估数据。</view>
+            </view>
+          </view>
+
+          <view class="weui-cells__group weui-cells__group_form report-section" wx:if="{{selectedSessionAnswers.length > 0}}">
+            <view class="weui-cells__title">会话详情</view>
+            <view class="weui-cells weui-cells_form">
+              <view class="weui-cell" wx:for="{{selectedSessionAnswers}}" wx:for-item="answer" wx:key="id">
+                <view class="weui-cell__bd">
+                  <view class="weui-label">问题: {{answer.question_text}}</view>
+                  <view class="weui-textarea">你的回答: {{answer.user_answer_transcript || '暂无'}}</view>
+                  <view class="weui-label">AI反馈:</view>
+                  <view class="ai-feedback-content">
+                    <towxml nodes="{{answer.aiFeedbackRichText}}" />
+                  </view>
+                </view>
+              </view>
+            </view>
+          </view>
+      </view>
+
+      <!-- Practice Overlay -->
+      <view wx:if="{{isPracticeOverlayVisible}}" class="practice-overlay">
+        <!-- Header -->
+        <view class="practice-header">
+          <text class="practice-status">面试演练中 ({{currentQuestionIndex + 1}}/{{generatedQaList.length}})</text>
+          <text class="close-practice-btn" bindtap="closePractice">×</text>
+        </view>
+
+        <!-- Main Content -->
+        <view class="practice-main-content">
+          <text class="practice-question">{{generatedQaList[currentQuestionIndex].question_text}}</text>
+
+          <!-- Initial State -->
+          <view wx:if="{{practiceState === 'initial'}}" class="practice-state-initial">
+            <view class="start-recording-btn" bindtap="startRecording">
+              <image class="icon-image" src="/images/microphone.png"></image>
+              <text class="text">开始回答</text>
+            </view>
+          </view>
+          <!-- Recording State -->
+          <view wx:if="{{practiceState === 'recording'}}" class="practice-state-recording">
+            <text class="recording-text">正在录音中... <text class="timer">{{timer}}</text></text>
+            <view class="stop-recording-btn" bindtap="stopRecording">■</view>
+          </view>
+          <!-- Feedback State -->
+          <view wx:if="{{practiceState === 'feedback'}}" class="practice-state-feedback">
+            <text class="feedback-title">你的回答:</text>
+            <text class="user-answer-transcript">{{userAnswerTranscript}}</text>
+            <text class="feedback-title">AI 反馈:</text>
+            <text class="ai-feedback-text">{{aiFeedback}}</text>
           </view>
         </view>
-  <!-- Keyword Input Modal -->
-  <view wx:if="{{isKeywordModalVisible}}" class="modal-backdrop" bindtap="hideKeywordModal">
-    <view class="modal-panel keyword-modal" catchtap="doNothing">
-      <view class="modal-header">
-        <text class="modal-title">关键词引导</text>
+
+        <!-- Footer -->
+        <view class="practice-footer">
+          <button class="show-answer-btn" bindtap="showSuggestedAnswer">查看建议答案</button>
+          <button class="next-question-btn"
+            bindtap="nextQuestion">{{currentQuestionIndex === generatedQaList.length - 1 ? '完成面试，查看评估' : '下一题 →'}}</button>
+        </view>
       </view>
-      <view class="modal-body">
-        <text class="form-label">输入希望AI重点突出的关键词（可选）</text>
-        <input class="form-input" placeholder="例如: Vue3, 团队合作" value="{{resumeKeywords}}" bindinput="handleKeywordInput"/>
-      </view>
-      <view class="modal-footer">
-        <button class="modal-button cancel" bindtap="hideKeywordModal">取消</button>
-        <button class="modal-button save" bindtap="generateResumeWithKeywords">确认生成</button>
-      </view>
+
+    </view>
+
+  </view>
+</view>
+<!-- Keyword Input Modal -->
+<view wx:if="{{isKeywordModalVisible}}" class="modal-backdrop" bindtap="hideKeywordModal">
+  <view class="modal-panel keyword-modal" catchtap="doNothing">
+    <view class="modal-header">
+      <text class="modal-title">关键词引导</text>
+    </view>
+    <view class="modal-body">
+      <text class="form-label">输入希望AI重点突出的关键词（可选）</text>
+      <input class="form-input" placeholder="例如: Vue3, 团队合作" value="{{resumeKeywords}}"
+        bindinput="handleKeywordInput" />
+    </view>
+    <view class="modal-footer">
+      <button class="modal-button cancel" bindtap="hideKeywordModal">取消</button>
+      <button class="modal-button save" bindtap="generateResumeWithKeywords">确认生成</button>
     </view>
   </view>
-
 </view>
+

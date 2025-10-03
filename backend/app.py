@@ -73,6 +73,57 @@ class Opportunity(db.Model):
             'updated_at': self.updated_at.isoformat()
         }
 
+# Define the InterviewSession model
+class InterviewSession(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    opportunity_id = db.Column(db.Integer, db.ForeignKey('opportunity.id'), nullable=False)
+    session_date = db.Column(db.DateTime, default=datetime.utcnow)
+    overall_score = db.Column(db.Integer)
+    report_summary = db.Column(db.Text)
+    radar_chart_data = db.Column(db.Text) # Storing JSON as Text
+
+    # Relationship to opportunity and session answers
+    opportunity = db.relationship('Opportunity', backref='interview_sessions', lazy=True)
+    session_answers = db.relationship('SessionAnswer', backref='interview_session', lazy=True, cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f'<InterviewSession {self.id} for Opportunity {self.opportunity_id}>'
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'opportunity_id': self.opportunity_id,
+            'session_date': self.session_date.isoformat(),
+            'overall_score': self.overall_score,
+            'report_summary': self.report_summary,
+            'radar_chart_data': json.loads(self.radar_chart_data) if self.radar_chart_data else None,
+            'session_answers': [sa.to_dict() for sa in self.session_answers]
+        }
+
+# Define the SessionAnswer model
+class SessionAnswer(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    session_id = db.Column(db.Integer, db.ForeignKey('interview_session.id'), nullable=False)
+    question_text = db.Column(db.Text, nullable=False)
+    suggested_answer = db.Column(db.Text)
+    user_answer_transcript = db.Column(db.Text)
+    ai_feedback = db.Column(db.Text)
+    user_audio_url = db.Column(db.String(255))
+
+    def __repr__(self):
+        return f'<SessionAnswer {self.id} for Session {self.session_id}>'
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'session_id': self.session_id,
+            'question_text': self.question_text,
+            'suggested_answer': self.suggested_answer,
+            'user_answer_transcript': self.user_answer_transcript,
+            'ai_feedback': self.ai_feedback,
+            'user_audio_url': self.user_audio_url
+        }
+
 # Create database tables (original place)
 with app.app_context():
     db.create_all()
@@ -170,6 +221,64 @@ def create_opportunity():
     db.session.commit()
     return jsonify(new_opportunity.to_dict()), 201
 
+# Helper function to generate and save Q&A
+def _generate_and_save_qa_for_opportunity(opportunity):
+    user = User.query.get(opportunity.user_id)
+    if not user:
+        # This case should ideally not happen if opportunity has a valid user_id
+        return []
+
+    # --- AI Prompt Preparation (for a real AI call) ---
+    prompt = f"""
+    请根据以下用户简历和岗位描述（JD），为用户生成5个高频面试问题及对应的建议答案，确保问题类型多样化，覆盖技术、项目、行为等多个方面，并以JSON格式返回。
+
+    返回的JSON需要包含一个键：
+    - `qa_list`: 一个对象数组，每个对象包含 `question` 和 `suggested_answer` 两个键。
+
+    --- 用户简历 ---
+    {user.profile_content}
+
+    --- 岗位描述 (JD) ---
+    {opportunity.job_description}
+    """
+
+    print("--- Generated AI Prompt for Q&A (Helper) ---")
+    print(prompt)
+    print("-------------------------------------------")
+
+    # --- Mock AI Call ---
+    import time
+    time.sleep(1) # Simulate delay
+
+    import random
+    num_questions = random.randint(3, 5)
+    mock_qa_list = [
+        {
+            "question": "请介绍一下你参与过的最有挑战性的项目，你在其中扮演了什么角色，遇到了什么困难，以及如何解决的？",
+            "suggested_answer": "建议使用STAR原则（情境、任务、行动、结果）来组织回答，突出你在项目中的贡献和解决问题的能力。"
+        },
+        {
+            "question": "你对我们公司有什么了解？为什么选择我们公司？",
+            "suggested_answer": "建议提前研究公司官网、新闻报道和产品，结合自身兴趣和职业规划，真诚表达对公司的认同和向往。"
+        },
+        {
+            "question": "你认为自己最大的优点和缺点是什么？",
+            "suggested_answer": "优点要结合岗位要求，举例说明；缺点要选择不影响核心工作能力的，并说明你如何改进。"
+        },
+        {
+            "question": "你对未来的职业发展有什么规划？",
+            "suggested_answer": "结合个人兴趣和行业发展趋势，展示清晰的职业目标和为之努力的计划。"
+        },
+        {
+            "question": "你有什么问题想问我们吗？",
+            "suggested_answer": "准备2-3个有深度的问题，体现你对公司和岗位的思考，例如关于团队文化、项目挑战或个人成长机会。"
+        }
+    ][:num_questions]
+
+    opportunity.generated_qa_json = json.dumps(mock_qa_list)
+    db.session.commit()
+    return mock_qa_list
+
 @app.route('/opportunities/<string:user_openid>', methods=['GET'])
 def get_opportunities_by_user(user_openid):
     user = User.query.filter_by(openid=user_openid).first()
@@ -212,6 +321,124 @@ def delete_opportunity(opportunity_id):
     db.session.delete(opportunity)
     db.session.commit()
     return jsonify({'message': 'Opportunity deleted'}), 200
+
+
+# API Endpoints for Interview Sessions
+@app.route('/opportunity/<int:opportunity_id>/interview_sessions', methods=['POST'])
+def create_interview_session(opportunity_id):
+    opportunity = Opportunity.query.get(opportunity_id)
+    if not opportunity:
+        return jsonify({'error': 'Opportunity not found'}), 404
+
+    # Use pre-generated Q&A if available, otherwise generate and save it
+    if opportunity.generated_qa_json:
+        qa_list = json.loads(opportunity.generated_qa_json)
+    else:
+        qa_list = _generate_and_save_qa_for_opportunity(opportunity)
+
+    if not qa_list:
+        return jsonify({'error': 'Could not generate or retrieve Q&A for the interview session'}), 500
+
+    # Create new InterviewSession
+    new_session = InterviewSession(opportunity_id=opportunity.id)
+    db.session.add(new_session)
+    db.session.commit() # Commit to get session ID
+
+    # Create SessionAnswer records
+    for qa_item in qa_list:
+        new_session_answer = SessionAnswer(
+            session_id=new_session.id,
+            question_text=qa_item['question'],
+            suggested_answer=qa_item['suggested_answer']
+        )
+        db.session.add(new_session_answer)
+    db.session.commit()
+
+    return jsonify(new_session.to_dict()), 201
+
+@app.route('/opportunity/<int:opportunity_id>/interview_sessions', methods=['GET'])
+def get_interview_sessions_by_opportunity(opportunity_id):
+    opportunity = Opportunity.query.get(opportunity_id)
+    if not opportunity:
+        return jsonify({'error': 'Opportunity not found'}), 404
+
+    sessions = InterviewSession.query.filter_by(opportunity_id=opportunity.id).all()
+    return jsonify([session.to_dict() for session in sessions]), 200
+
+@app.route('/opportunity/<int:opportunity_id>/interview_sessions/latest', methods=['GET'])
+def get_latest_interview_session(opportunity_id):
+    opportunity = Opportunity.query.get(opportunity_id)
+    if not opportunity:
+        return jsonify({'error': 'Opportunity not found'}), 404
+
+    latest_session = InterviewSession.query.filter_by(opportunity_id=opportunity.id)\
+                                       .order_by(InterviewSession.session_date.desc()).first()
+
+    if not latest_session:
+        return jsonify({'message': 'No interview sessions found for this opportunity'}), 200
+
+    return jsonify(latest_session.to_dict()), 200
+
+@app.route('/interview_session/<int:session_id>', methods=['GET'])
+def get_interview_session(session_id):
+    session = InterviewSession.query.get(session_id)
+    if not session:
+        return jsonify({'error': 'Interview Session not found'}), 404
+    return jsonify(session.to_dict()), 200
+
+@app.route('/interview_session/<int:session_id>/answer', methods=['POST'])
+def record_session_answer(session_id):
+    session = InterviewSession.query.get(session_id)
+    if not session:
+        return jsonify({'error': 'Interview Session not found'}), 404
+
+    data = request.get_json()
+    question_text = data.get('question_text')
+    user_answer_transcript = data.get('user_answer_transcript')
+    user_audio_url = data.get('user_audio_url')
+
+    if not question_text or not user_answer_transcript:
+        return jsonify({'error': 'Question text and user answer transcript are required'}), 400
+
+    # Find the specific SessionAnswer to update
+    session_answer = SessionAnswer.query.filter_by(
+        session_id=session_id,
+        question_text=question_text
+    ).first()
+
+    if not session_answer:
+        return jsonify({'error': 'Session Answer for this question not found in this session'}), 404
+
+    session_answer.user_answer_transcript = user_answer_transcript
+    session_answer.user_audio_url = user_audio_url
+
+    # Mock AI Feedback Generation
+    mock_ai_feedback = f"[模拟AI反馈] 针对问题 \"{question_text}\"，您的回答流畅，但可以进一步结合具体项目经验来支撑您的观点。建议在表达时更突出您的个人贡献。"
+    session_answer.ai_feedback = mock_ai_feedback
+
+    db.session.commit()
+    return jsonify(session_answer.to_dict()), 200
+
+@app.route('/interview_session/<int:session_id>/finish', methods=['PUT'])
+def finish_interview_session(session_id):
+    session = InterviewSession.query.get(session_id)
+    if not session:
+        return jsonify({'error': 'Interview Session not found'}), 404
+
+    # Mock AI Evaluation Generation
+    import random
+    session.overall_score = random.randint(60, 95)
+    session.report_summary = "[模拟AI总结] 本次面试表现良好，对技术问题理解深入，但沟通表达能力有待提升。"
+    session.radar_chart_data = json.dumps({
+        "沟通能力": random.randint(60, 90),
+        "技术深度": random.randint(70, 95),
+        "逻辑思维": random.randint(65, 90),
+        "解决问题能力": random.randint(60, 90),
+        "学习潜力": random.randint(70, 95)
+    })
+
+    db.session.commit()
+    return jsonify(session.to_dict()), 200
 
 
 @app.route('/opportunity/<int:opportunity_id>/analyze_jd', methods=['POST'])
@@ -261,66 +488,12 @@ def analyze_jd(opportunity_id):
 
 @app.route('/opportunity/<int:opportunity_id>/generate_qa', methods=['POST'])
 def generate_qa(opportunity_id):
-    import time
     opportunity = Opportunity.query.get(opportunity_id)
     if not opportunity:
         return jsonify({'error': 'Opportunity not found'}), 404
 
-    user = User.query.get(opportunity.user_id)
-    if not user:
-        return jsonify({'error': 'User not found for this opportunity'}), 404
-
-    # --- AI Prompt Preparation --- #
-    prompt = f"""
-    请根据以下用户简历和岗位描述（JD），为用户生成5个高频面试问题及对应的建议答案，确保问题类型多样化，覆盖技术、项目、行为等多个方面，并以JSON格式返回。
-
-    返回的JSON需要包含一个键：
-    - `qa_list`: 一个对象数组，每个对象包含 `question` 和 `suggested_answer` 两个键。
-
-    --- 用户简历 ---
-    {user.profile_content}
-
-    --- 岗位描述 (JD) ---
-    {opportunity.job_description}
-    """
-
-    print("--- Generated AI Prompt for Q&A ---")
-    print(prompt)
-    print("-----------------------------------")
-
-    # --- Mock AI Call --- #
-    time.sleep(2)
-
-    # Return a hardcoded mock response
-    import random
-    num_questions = random.randint(3, 5) # Simulate dynamic number of questions
-    mock_qa_list = [
-        {
-            "question": "请介绍一下你参与过的最有挑战性的项目，你在其中扮演了什么角色，遇到了什么困难，以及如何解决的？",
-            "suggested_answer": "建议使用STAR原则（情境、任务、行动、结果）来组织回答，突出你在项目中的贡献和解决问题的能力。"
-        },
-        {
-            "question": "你对我们公司有什么了解？为什么选择我们公司？",
-            "suggested_answer": "建议提前研究公司官网、新闻报道和产品，结合自身兴趣和职业规划，真诚表达对公司的认同和向往。"
-        },
-        {
-            "question": "你认为自己最大的优点和缺点是什么？",
-            "suggested_answer": "优点要结合岗位要求，举例说明；缺点要选择不影响核心工作能力的，并说明你如何改进。"
-        },
-        {
-            "question": "你对未来的职业发展有什么规划？",
-            "suggested_answer": "结合个人兴趣和行业发展趋势，展示清晰的职业目标和为之努力的计划。"
-        },
-        {
-            "question": "你有什么问题想问我们吗？",
-            "suggested_answer": "准备2-3个有深度的问题，体现你对公司和岗位的思考，例如关于团队文化、项目挑战或个人成长机会。"
-        }
-    ][:num_questions] # Slice to get dynamic number of questions
-
-    opportunity.generated_qa_json = json.dumps(mock_qa_list) # Save to database as JSON string
-    db.session.commit()
-
-    return jsonify({"qa_list": mock_qa_list}), 200
+    qa_list = _generate_and_save_qa_for_opportunity(opportunity)
+    return jsonify({"qa_list": qa_list}), 200
 
 
 @app.route('/opportunity/<int:opportunity_id>/update_qa_content', methods=['PUT'])
