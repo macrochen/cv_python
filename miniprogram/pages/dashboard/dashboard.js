@@ -5,19 +5,19 @@ Page({
     actionSuggestions: [],
     loadingAbilityData: true,
     errorAbilityData: false,
-    // 模拟行动建议数据 (此部分不受影响)
-    mockActionSuggestions: [
-      { type: 'interviewing', text: '您有一个面试中的机会，建议进行面试演练。', action: 'practiceInterview', icon: '🎙️' },
-      { type: 'pending', text: '您有一个待投递的机会，建议生成定制简历。', action: 'generateResume', icon: '📝' },
-      { type: 'written_test', text: '您有一个笔试中的机会，建议预测面试问题。', action: 'predictQuestions', icon: '🧠' }
-    ]
+    loadingActionSuggestions: true, // 新增：行动建议加载状态
+    errorActionSuggestions: false, // 新增：行动建议错误状态
+    // 将 action type 映射到后端使用的 opportunity status
+    actionTypeToStatusMap: {
+      'interviewing': '面试中',
+      'pending': '待投递',
+      'submitted': '已投递' // Changed from 'written_test' to 'submitted'
+    }
   },
 
   onLoad: function (options) {
     this.fetchAbilityData();
-    this.setData({
-      actionSuggestions: this.data.mockActionSuggestions
-    });
+    this.fetchActionSuggestions(); // 调用API获取行动建议
     console.log('onLoad end - errorAbilityData:', this.data.errorAbilityData);
   },
 
@@ -28,8 +28,6 @@ Page({
   onShow: function () {
     console.log('onShow start - errorAbilityData:', this.data.errorAbilityData);
     console.log('onShow start - combinedAbilityData:', this.data.combinedAbilityData);
-    // Optionally re-fetch data if needed, but for now just log
-    // this.fetchAbilityData(); 
     console.log('onShow end - errorAbilityData:', this.data.errorAbilityData);
   },
 
@@ -43,6 +41,7 @@ Page({
 
   onPullDownRefresh: function () {
     this.fetchAbilityData();
+    this.fetchActionSuggestions(); // 下拉刷新时重新获取行动建议
   },
   onReachBottom: function () {
 
@@ -159,11 +158,109 @@ Page({
     });
   },
 
+  // 从后端API获取行动建议数据
+  fetchActionSuggestions: function () {
+    const app = getApp();
+    const backendBaseUrl = app.globalData.backendBaseUrl;
+    const userOpenId = app.globalData.userInfo ? app.globalData.userInfo.openid : null;
+
+    console.log('Fetching action suggestions...');
+    console.log('backendBaseUrl (suggestions):', backendBaseUrl);
+    console.log('userOpenId (suggestions):', userOpenId);
+
+    if (!backendBaseUrl) {
+      console.error('backendBaseUrl is not configured for action suggestions.');
+      this.setData({
+        errorActionSuggestions: true,
+        loadingActionSuggestions: false,
+        actionSuggestions: []
+      });
+      return;
+    }
+
+    if (!userOpenId) {
+      console.error('User OpenID not found for action suggestions.');
+      this.setData({
+        errorActionSuggestions: true,
+        loadingActionSuggestions: false,
+        actionSuggestions: []
+      });
+      return;
+    }
+
+    this.setData({
+      loadingActionSuggestions: true,
+      errorActionSuggestions: false,
+      actionSuggestions: []
+    });
+
+    wx.request({
+      url: `${backendBaseUrl}/action_suggestions/${userOpenId}`,
+      method: 'GET',
+      success: (res) => {
+        console.log('Action Suggestions API Response Status Code:', res.statusCode);
+        console.log('Action Suggestions API Response Data:', res.data);
+
+        if (res.statusCode === 200 && Array.isArray(res.data)) {
+          console.log('Action Suggestions API call successful, processing data.');
+          this.setData({
+            actionSuggestions: res.data,
+            loadingActionSuggestions: false,
+            errorActionSuggestions: false
+          });
+        } else {
+          console.error('Failed to fetch action suggestions (non-200 or non-array data):', res);
+          this.setData({
+            errorActionSuggestions: true,
+            loadingActionSuggestions: false,
+            actionSuggestions: []
+          });
+        }
+        console.log('fetchActionSuggestions end (success callback) - errorActionSuggestions:', this.data.errorActionSuggestions);
+      },
+      fail: (err) => {
+        console.error('Request for action suggestions failed (network error):', err);
+        this.setData({
+          errorActionSuggestions: true,
+          loadingActionSuggestions: false,
+          actionSuggestions: []
+        });
+        console.log('fetchActionSuggestions end (fail callback) - errorActionSuggestions:', this.data.errorActionSuggestions);
+      }
+    });
+  },
+
   handleActionTap: function (e) {
     const { action } = e.currentTarget.dataset;
-    wx.showToast({
-      title: `执行动作: ${action}`,
-      icon: 'none'
-    });
+    // 获取点击的建议项的完整数据
+    const suggestion = this.data.actionSuggestions.find(s => s.action === action);
+
+    if (!suggestion) {
+      wx.showToast({
+        title: `未找到对应建议`, 
+        icon: 'none'
+      });
+      return;
+    }
+
+    console.log('actionTypeToStatusMap:', this.data.actionTypeToStatusMap);
+    const targetStatus = this.data.actionTypeToStatusMap[suggestion.type]; // Access from this.data
+    console.log('Target Status:', targetStatus);
+
+    if (targetStatus) {
+      const app = getApp();                                                         
+      app.globalData.opportunitiesFilterStatus = targetStatus; // 将过滤状态存入全局数据                                                                
+      const url = `/pages/opportunities/opportunities`; // 移除查询字符串
+      console.log('Navigating to URL:', url);
+      wx.switchTab({
+        url: url
+      });
+    } else {
+      wx.showToast({
+        title: `未知建议类型: ${suggestion.type}`, 
+        icon: 'none'
+      });
+      console.log('Unknown suggestion type:', suggestion.type);
+    }
   }
 })

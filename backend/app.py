@@ -727,6 +727,55 @@ def get_latest_ability_assessments(user_openid):
     }), 200
 
 
+@app.route('/action_suggestions/<string:user_openid>', methods=['GET'])
+def get_action_suggestions(user_openid):
+    user = User.query.filter_by(openid=user_openid).first()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    opportunities = Opportunity.query.filter_by(user_id=user.id).all()
+
+    suggestions = []
+    # Group opportunities by status
+    opportunities_by_status = {}
+    for opp in opportunities:
+        opportunities_by_status.setdefault(opp.status, []).append(opp)
+
+    # Generate suggestions based on status
+    if '面试中' in opportunities_by_status:
+        count = len(opportunities_by_status['面试中'])
+        suggestions.append({
+            "type": "interviewing",
+            "text": f"您有{count}个面试中的机会，建议进行面试演练。",
+            "action": "practiceInterview",
+            "icon": "🎙️",
+            "opportunity_id": opportunities_by_status['面试中'][0].id if count > 0 else None # Link to first one for simplicity
+        })
+    
+    if '待投递' in opportunities_by_status:
+        count = len(opportunities_by_status['待投递'])
+        suggestions.append({
+            "type": "pending",
+            "text": f"您有{count}个待投递的机会，建议生成定制简历。",
+            "action": "generateResume",
+            "icon": "📝",
+            "opportunity_id": opportunities_by_status['待投递'][0].id if count > 0 else None
+        })
+
+    if '已投递' in opportunities_by_status:
+        count = len(opportunities_by_status.get('已投递', []))
+        if count > 0:
+            suggestions.append({
+                "type": "submitted", # Changed type to 'submitted'
+                "text": f"您有{count}个已投递的机会，建议预测面试问题。",
+                "action": "predictQuestions",
+                "icon": "🧠",
+                "opportunity_id": opportunities_by_status['已投递'][0].id if count > 0 else None
+            })
+
+    return jsonify(suggestions), 200
+
+
 @app.route('/')
 def hello_world():
     return 'Hello, World!'

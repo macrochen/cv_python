@@ -11,21 +11,54 @@ Page({
     searchQuery: '',
     filterOptions: ['全部', '待投递', '已投递', '面试中', '已发Offer', '已结束'],
     activeFilterIndex: 0,
+    externalFilterStatus: null, // 新增：用于存储从外部传入的过滤状态
     // For the modal
     formData: { company_name: '', position_name: '', status: '待投递', latest_progress: '', job_description: '' },
     editingOpportunityId: null,
     selectedStatusIndex: 0
   },
 
-  onShow: function () {
-    this.fetchOpportunities();
+  onLoad: function (options) {
+    // 移除 onLoad 中处理 options.status 的逻辑，因为现在通过 globalData 传递
+    console.log('Opportunities Page onLoad.');
   },
 
-  fetchOpportunities: function () {
+  onShow: function () {
+    console.log('Opportunities Page onShow.');
+    const app = getApp();
+    let initialFilterStatus = null;
+
+    if (app.globalData.opportunitiesFilterStatus) {
+      initialFilterStatus = app.globalData.opportunitiesFilterStatus;
+      const filterIndex = this.data.filterOptions.indexOf(initialFilterStatus);
+      if (filterIndex !== -1) {
+        this.setData({
+          activeFilterIndex: filterIndex,
+          // externalFilterStatus: initialFilterStatus // 不再需要存储在 data 中，直接传递给 fetchOpportunities
+        });
+        console.log('onShow: Applying external filter status from globalData:', initialFilterStatus);
+      } else {
+        console.warn('onShow: Invalid status received from globalData:', initialFilterStatus);
+      }
+      app.globalData.opportunitiesFilterStatus = null; // 使用后立即清除全局变量
+    }
+    console.log('onShow: initialFilterStatus before fetchOpportunities:', initialFilterStatus);
+    this.fetchOpportunities(initialFilterStatus); // 将初始过滤状态传递给 fetchOpportunities
+  },
+
+  fetchOpportunities: function (initialFilterStatus = null) {
     const userOpenId = app.globalData.userInfo ? app.globalData.userInfo.openid : null;
-    if (!userOpenId) { return; }
+    if (!userOpenId) { 
+      wx.showToast({ title: '用户未登录', icon: 'error' });
+      return; 
+    }
 
     const backendBaseUrl = app.globalData.backendBaseUrl;
+    if (!backendBaseUrl) {
+      wx.showToast({ title: '后端URL未配置', icon: 'error' });
+      return;
+    }
+
     wx.request({
       url: `${backendBaseUrl}/opportunities/${userOpenId}`,
       method: 'GET',
@@ -43,7 +76,8 @@ Page({
             return opp;
           });
           this.setData({ allOpportunities: opportunities });
-          this.applyFilters(); // Apply filters after fetching
+          console.log('All Opportunities after fetch:', this.data.allOpportunities);
+          this.applyFilters(initialFilterStatus); // 将初始过滤状态传递给 applyFilters
         } else {
           wx.showToast({ title: '获取列表失败', icon: 'error' });
         }
@@ -60,19 +94,30 @@ Page({
   },
 
   handleFilterChange: function(e) {
-    this.setData({ activeFilterIndex: e.detail.value });
+    this.setData({ activeFilterIndex: e.detail.value }); // 用户手动选择过滤器时，不再清除 externalFilterStatus
     this.applyFilters();
   },
 
-  applyFilters: function() {
+  applyFilters: function(externalFilterStatus = null) {
+    console.log('Applying filters...');
+    console.log('applyFilters: externalFilterStatus parameter:', externalFilterStatus);
     const { allOpportunities, activeFilterIndex, filterOptions, searchQuery } = this.data;
-    const activeFilter = filterOptions[activeFilterIndex];
+    console.log('applyFilters: activeFilterIndex:', activeFilterIndex);
+    console.log('applyFilters: filterOptions:', filterOptions);
+    console.log('applyFilters: searchQuery:', searchQuery);
+    
+    // 优先使用从参数传入的 externalFilterStatus，否则使用 activeFilterIndex 对应的过滤器
+    let currentFilterStatus = externalFilterStatus || filterOptions[activeFilterIndex];
+    console.log('Current Filter Status:', currentFilterStatus);
+
     let filtered = allOpportunities;
+    console.log('Opportunities before status filtering:', filtered);
 
     // Apply status filter
-    if (activeFilter !== '全部') {
-      filtered = filtered.filter(opp => opp.status === activeFilter);
+    if (currentFilterStatus !== '全部') {
+      filtered = filtered.filter(opp => opp.status === currentFilterStatus);
     }
+    console.log('Opportunities after status filtering:', filtered);
 
     // Apply search filter
     if (searchQuery.trim() !== '') {
@@ -82,8 +127,11 @@ Page({
         opp.company_name.toLowerCase().includes(lowerCaseQuery)
       );
     }
+    console.log('Opportunities after search filtering:', filtered);
 
     this.setData({ opportunities: filtered });
+    console.log('Opportunities after final setData:', this.data.opportunities);
+    console.log('Filters applied, opportunities count:', filtered.length);
   },
 
   // --- Modal Logic --- //
