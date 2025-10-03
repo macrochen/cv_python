@@ -1,4 +1,61 @@
 <!--pages/dashboard/dashboard.wxml-->
 <view class="container">
-  <text>Welcome to Dashboard!</text>
+  <!-- Welcome Message -->
+  <view class="welcome-section">
+    <text class="welcome-text">欢迎回来, 祝你早日拿到心仪的Offer!</text>
+  </view>
+
+  <!-- Ability Analysis -->
+  <view class="chart-section">
+    <text class="section-title">最新能力分析</text>
+    <view wx:if="{{loadingAbilityData}}" class="loading-placeholder">
+      <text>正在加载能力数据...</text>
+    </view>
+    <view wx:if="{{errorAbilityData}}" class="error-placeholder">
+      <text>加载能力数据失败，请稍后重试。</text>
+    </view>
+    <view wx:if="{{!loadingAbilityData && !errorAbilityData}}" class="radar-chart-container">
+      <view class="radar-legend">
+        <text class="latest-legend">最新评估</text>
+        <text class="previous-legend">上次评估</text>
+      </view>
+      <block wx:for="{{combinedAbilityData}}" wx:for-item="item" wx:key="key">
+        <view class="radar-skill-item">
+          <text class="skill-name">{{item.key}}</text>
+          <view class="skill-bar-group">
+            <view class="skill-bar-background previous-bar">
+              <view class="skill-bar-fill" style="width: {{item.previous_value}}%;"></view>
+              <text class="skill-score">{{item.previous_value}}</text>
+            </view>
+            <view class="skill-bar-background latest-bar">
+              <view class="skill-bar-fill" style="width: {{item.latest_value}}%;"></view>
+              <text class="skill-score">{{item.latest_value}}</text>
+            </view>
+          </view>
+        </view>
+      </block>
+      <text wx:if="{{combinedAbilityData.length === 0}}" class="radar-data-text">暂无能力得分数据。</text>
+    </view>
+  </view>
+
+  <!-- Action Suggestions -->
+  <view class="suggestions-section">
+    <text class="section-title">行动建议</text>
+    <view class="suggestion-list">
+      <view wx:for="{{actionSuggestions}}" wx:key="type" class="weui-panel weui-panel_access suggestion-item type-{{item.type}}" bindtap="handleActionTap" data-action="{{item.action}}">
+        <view class="weui-panel__bd">
+          <view class="weui-media-box weui-media-box_text">
+            <view class="weui-media-box__title weui-media-box__title_in-text">{{item.text}}</view>
+          </view>
+          <view class="action-button-wrapper">
+            <text class="action-icon">{{item.icon}}</text>
+            <text>{{item.type === 'interviewing' ? '进行面试演练' : (item.type === 'pending' ? '生成定制简历' : '预测面试问题')}}</text>
+          </view>
+        </view>
+      </view>
+      <view wx:if="{{actionSuggestions.length === 0}}" class="no-suggestions">
+        暂无行动建议。
+      </view>
+    </view>
+  </view>
 </view>

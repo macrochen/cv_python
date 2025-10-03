@@ -687,6 +687,46 @@ def generate_pdf_route():
     return jsonify({"pdf_url": pdf_url}), 200
 
 
+@app.route('/assessments/latest/<string:user_openid>', methods=['GET'])
+def get_latest_ability_assessments(user_openid):
+    # user_openid is now directly available from the path
+    # if not user_openid: # This check is no longer needed as it's a path parameter
+    #     return jsonify({'error': 'User OpenID is required'}), 400
+
+    user = User.query.filter_by(openid=user_openid).first()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    # Get all opportunities for the user
+    user_opportunities = Opportunity.query.filter_by(user_id=user.id).all()
+    opportunity_ids = [opp.id for opp in user_opportunities]
+
+    if not opportunity_ids:
+        return jsonify({
+            'latest_assessment': None,
+            'previous_assessment': None
+        }), 200
+
+    # Fetch the latest two interview sessions across all user's opportunities
+    sessions = InterviewSession.query.filter(InterviewSession.opportunity_id.in_(opportunity_ids))\
+                                   .order_by(InterviewSession.session_date.desc())\
+                                   .limit(2)\
+                                   .all()
+
+    latest_assessment = None
+    previous_assessment = None
+
+    if sessions:
+        latest_assessment = sessions[0].to_dict()
+        if len(sessions) > 1:
+            previous_assessment = sessions[1].to_dict()
+
+    return jsonify({
+        'latest_assessment': latest_assessment,
+        'previous_assessment': previous_assessment
+    }), 200
+
+
 @app.route('/')
 def hello_world():
     return 'Hello, World!'
