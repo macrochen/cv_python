@@ -42,7 +42,8 @@ Page({
         showActionSheet: false,
         actions: [
             { name: '下载PDF', value: 'download' }
-        ]
+        ],
+        userAnswerText: '' // New data property for text input
     },
 
     // Helper to show toast messages
@@ -234,22 +235,6 @@ Page({
     },
 
   onLoad: function (options) {
-    // Initialize recorder manager
-    const recorderManager = wx.getRecorderManager();
-    recorderManager.onStop((res) => {
-      console.log('Recorder stopped', res);
-      this.setData({ recordedTempFilePath: res.tempFilePath });
-      // This part needs to be updated to send to the correct backend endpoint for session answers
-      // For now, it's commented out or needs a placeholder
-      // this.sendAudioForEvaluation(res.tempFilePath);
-    });
-    recorderManager.onError((res) => {
-      console.error('Recorder error', res);
-      wx.showToast({ title: '录音失败', icon: 'error' });
-      this.setData({ practiceState: 'initial' });
-    });
-    this.setData({ recorderManager: recorderManager });
-
     if (options.id) {
       this.setData({ opportunityId: options.id });
       this.fetchOpportunityDetail();
@@ -291,8 +276,8 @@ Page({
             try {
               const parsedQa = JSON.parse(generatedQaJson);
               generatedQA = parsedQa.map(item => ({
-                question_text: item.question, // Map 'question' to 'question_text'
-                suggested_answer: item.suggested_answer
+                question_text: item.question !== undefined ? item.question : '',
+                suggested_answer: item.suggested_answer !== undefined ? item.suggested_answer : ''
               }));
             } catch (e) {
               console.error("Error parsing generated_qa_json:", e);
@@ -471,7 +456,10 @@ Page({
       success: (res) => {
         if (res.statusCode === 200 && res.data.qa_list) {
           this.setData({
-            generatedQaList: res.data.qa_list,
+            generatedQaList: res.data.qa_list.map(item => ({
+              question_text: item.question !== undefined ? item.question : '',
+              suggested_answer: item.suggested_answer !== undefined ? item.suggested_answer : ''
+            })),
             activeTab: 'qa',
             'opportunity.generated_qa_json': JSON.stringify(res.data.qa_list) // Update the opportunity object
           });
@@ -505,11 +493,14 @@ Page({
         if (res.statusCode === 201 && res.data.id) {
           this.setData({
             currentInterviewSessionId: res.data.id, // Store the new session ID
-            generatedQaList: res.data.session_answers, // Use questions from the new session
+            generatedQaList: res.data.session_answers.map(item => ({
+              question_text: item.question !== undefined ? item.question : '',
+              suggested_answer: item.suggested_answer !== undefined ? item.suggested_answer : ''
+            })), // Use questions from the new session
             isPracticeOverlayVisible: true,
             currentQuestionIndex: 0,
             practiceState: 'initial',
-            timer: '00:00',
+            userAnswerText: '', // Clear previous answer
             aiFeedback: ''
           });
           this.displayQuestion();
@@ -531,52 +522,36 @@ Page({
     if (generatedQaList.length > 0 && currentQuestionIndex < generatedQaList.length) {
       this.setData({
         practiceState: 'initial',
-        timer: '00:00',
+        userAnswerText: '', // Clear previous answer
         aiFeedback: ''
       });
     }
   },
 
-  startRecording: function() {
-    this.setData({ practiceState: 'recording' });
-    const recorderManager = this.data.recorderManager;
-    recorderManager.start({
-      duration: 60000, // Max 1 minute
-      sampleRate: 16000,
-      numberOfChannels: 1,
-      encodeBitRate: 96000,
-      format: 'mp3',
-      frameSize: 50
-    });
-    // Simulate recording timer
-    let seconds = 0;
-    this.recordingInterval = setInterval(() => {
-      seconds++;
-      const minutes = Math.floor(seconds / 60);
-      const remainingSeconds = seconds % 60;
-      const timerString = `${minutes < 10 ? '0' : ''}${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
-      this.setData({ timer: timerString });
-    }, 1000);
+
+
+  handleTextInput: function(e) {
+    this.setData({ userAnswerText: e.detail.value });
   },
 
-  stopRecording: function() {
-    console.log("stopRecording function called.");
-    clearInterval(this.recordingInterval);
-    this.data.recorderManager.stop(); // onStop event will trigger sendAudioForEvaluation
+  submitTextAnswer: function() {
+    const { userAnswerText } = this.data;
+    if (!userAnswerText.trim()) {
+      this.showToast('请输入你的回答', 'none');
+      return;
+    }
+    this.sendAnswerForEvaluation(userAnswerText);
   },
 
-  sendAudioForEvaluation: function(filePath) {
+  sendAnswerForEvaluation: function(answerText) {
     wx.showLoading({
-      title: '正在转写并评估...',
+      title: '正在评估...',
       mask: true
     });
 
     const currentInterviewSessionId = this.data.currentInterviewSessionId;
     const backendBaseUrl = app.globalData.backendBaseUrl;
     const currentQuestion = this.data.generatedQaList[this.data.currentQuestionIndex];
-
-    // Simulate transcription for now
-    const mockTranscript = "[模拟转写] " + (Math.random() > 0.5 ? "您的回答很清晰，表达流畅。" : "您的回答有些犹豫，可以更自信一些。");
 
     wx.request({
       url: `${backendBaseUrl}/interview_session/${currentInterviewSessionId}/answer`,
@@ -585,9 +560,8 @@ Page({
         'Content-Type': 'application/json'
       },
       data: {
-        question_text: currentQuestion.question,
-        user_answer_transcript: mockTranscript, // Using mock transcript for now
-        user_audio_url: filePath // Pass the recorded audio file path
+        question_text: currentQuestion.question_text,
+        user_answer_transcript: answerText,
       },
       success: (res) => {
         wx.hideLoading();
@@ -624,7 +598,14 @@ Page({
   },
 
   nextQuestion: function() {
-    const { generatedQaList, currentQuestionIndex } = this.data;
+    const { generatedQaList, currentQuestionIndex, practiceState } = this.data;
+
+    // Ensure the current question's answer has been submitted and evaluated
+    if (practiceState !== 'feedback') {
+      this.showToast('请先提交当前问题的回答', 'none');
+      return;
+    }
+
     if (currentQuestionIndex < generatedQaList.length - 1) {
       this.setData({ currentQuestionIndex: currentQuestionIndex + 1 });
       this.displayQuestion();
@@ -646,7 +627,6 @@ Page({
   },
 
   finishInterview: function(isInterrupted = false) {
-    clearInterval(this.recordingInterval);
     this.setData({ isPracticeOverlayVisible: false });
 
     const currentInterviewSessionId = this.data.currentInterviewSessionId;
@@ -681,20 +661,19 @@ Page({
 
   // --- Q&A List Management --- //
   handleAddQa: function() {
-    const newQa = { id: Date.now(), question: '新问题...', suggested_answer: '新答案...' };
+    const newQa = { question_text: '新问题...', suggested_answer: '新答案...' };
     this.setData({
-      generatedQaList: [...this.data.generatedQaList, newQa]
+      generatedQaList: [newQa, ...this.data.generatedQaList]
     });
   },
 
   handleQaInputChange: function(e) {
-    const { id, field } = e.currentTarget.dataset;
+    const { index, field } = e.currentTarget.dataset;
     const value = e.detail.value;
-    const index = this.data.generatedQaList.findIndex(qa => qa.id == id);
 
-    if (index !== -1) {
+    if (index !== undefined) {
       // Debounce the setData call
-      this._debouncedSetQaData(index, field, value);
+      this._debouncedSetQaData(Number(index), field, value);
     }
   },
 
@@ -708,7 +687,10 @@ Page({
   saveQaList: function() {
     const id = this.data.opportunityId;
     const backendBaseUrl = app.globalData.backendBaseUrl;
-    const qaListToSave = this.data.generatedQaList;
+    const qaListToSave = this.data.generatedQaList.map(qa => {
+      const { question_text, suggested_answer } = qa;
+      return { question: question_text, suggested_answer: suggested_answer };
+    });
 
     wx.request({
       url: `${backendBaseUrl}/opportunity/${id}/update_qa_content`,
@@ -733,14 +715,16 @@ Page({
   },
 
   deleteQa: function(e) {
-    const idToDelete = e.currentTarget.dataset.id;
+    const indexToDelete = e.currentTarget.dataset.index;
     wx.showModal({
       title: '确认删除',
-      content: '您确定要删除这个问题吗？',
+      content: '您确定要删除这个问题吗？删除后请点击“保存全部修改”按钮以同步到后端。',
       success: (res) => {
         if (res.confirm) {
+          const updatedQaList = [...this.data.generatedQaList];
+          updatedQaList.splice(indexToDelete, 1);
           this.setData({
-            generatedQaList: this.data.generatedQaList.filter(qa => qa.id != idToDelete)
+            generatedQaList: updatedQaList
           });
           wx.showToast({ title: '删除成功', icon: 'success' });
         }

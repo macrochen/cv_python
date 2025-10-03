@@ -117,22 +117,22 @@
       </view>
       <!-- Q&A Tab -->
       <view class="tab-content" hidden="{{activeTab !== 'qa'}}">
-        <view class="qa-controls" wx:if="{{generatedQaList.length > 0}}">
-          <button class="qa-btn add" bindtap="handleAddQa">+ 新增问答</button>
+        <view class="qa-controls">
+          <button class="qa-btn add" bindtap="handleAddQa">+ 新增问题</button>
           <button class="qa-btn save" bindtap="saveQaList">保存全部修改</button>
         </view>
         <view wx:if="{{generatedQaList.length === 0}}" class="card placeholder-card">
           <text>尚未生成问答。请点击上方的“AI进行面试演练”按钮开始。</text>
         </view>
         <view wx:else class="qa-list-container">
-          <block wx:for="{{generatedQaList}}" wx:key="id">
+          <block wx:for="{{generatedQaList}}" wx:for-item="item" wx:for-index="index" wx:key="index">
             <view class="qa-item">
               <view class="qa-item-header">
                 <textarea class="question-input" value="{{item.question_text}}" bindinput="handleQaInputChange"
-                  data-id="{{item.id}}" data-field="question" auto-height></textarea>
-                <view class="delete-qa-btn" bindtap="deleteQa" data-id="{{item.id}}">×</view>
+                  data-index="{{index}}" data-field="question_text" auto-height></textarea>
+                <view class="delete-qa-btn" bindtap="deleteQa" data-index="{{index}}">×</view>
               </view> <textarea class="answer-input" value="{{item.suggested_answer}}" bindinput="handleQaInputChange"
-                data-id="{{item.id}}" data-field="suggested_answer" auto-height></textarea>
+                data-index="{{index}}" data-field="suggested_answer" auto-height></textarea>
             </view>
           </block>
         </view>
@@ -219,17 +219,11 @@
         <view class="practice-main-content">
           <text class="practice-question">{{generatedQaList[currentQuestionIndex].question_text}}</text>
 
-          <!-- Initial State -->
-          <view wx:if="{{practiceState === 'initial'}}" class="practice-state-initial">
-            <view class="start-recording-btn" bindtap="startRecording">
-              <image class="icon-image" src="/images/microphone.png"></image>
-              <text class="text">开始回答</text>
-            </view>
-          </view>
-          <!-- Recording State -->
-          <view wx:if="{{practiceState === 'recording'}}" class="practice-state-recording">
-            <text class="recording-text">正在录音中... <text class="timer">{{timer}}</text></text>
-            <view class="stop-recording-btn" bindtap="stopRecording">■</view>
+          <!-- Text Input State -->
+          <view wx:if="{{practiceState === 'initial' || practiceState === 'answering'}}" class="practice-state-answering">
+            <textarea class="answer-textarea" placeholder="请输入你的回答..." value="{{userAnswerText}}" bindinput="handleTextInput" auto-height show-confirm-bar="{{false}}" maxlength="2000"></textarea>
+            <text class="voice-input-hint">💡 您可以使用手机自带的语音输入法进行回答</text>
+            <button class="submit-answer-btn" bindtap="submitTextAnswer" disabled="{{!userAnswerText}}">提交回答</button>
           </view>
           <!-- Feedback State -->
           <view wx:if="{{practiceState === 'feedback'}}" class="practice-state-feedback">
