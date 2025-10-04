@@ -244,6 +244,7 @@ Page({
     }
 
     console.log('actionTypeToStatusMap:', this.data.actionTypeToStatusMap);
+    console.log('Suggestion Type:', suggestion.type);
     const targetStatus = this.data.actionTypeToStatusMap[suggestion.type]; // Access from this.data
     console.log('Target Status:', targetStatus);
 
