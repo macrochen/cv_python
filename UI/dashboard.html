@@ -7,6 +7,45 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <style>
         body { background-color: #f8f9fa; }
+        .suggestion-item {
+            background-color: #ffffff;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            transition: box-shadow 0.2s;
+            display: block;
+            text-decoration: none;
+        }
+        .suggestion-item:hover {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+        .suggestion-title {
+            font-size: 0.875rem;
+            color: #374151;
+            margin-bottom: 0.75rem;
+        }
+        .action-button-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 0.75rem;
+            border-top: 1px solid #f3f4f6;
+        }
+        .action-button-text {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #3b82f6;
+        }
+        .action-icon {
+            font-size: 1rem;
+        }
+        /* Styles for Bar Chart */
+        .skill-bar-group { display: flex; flex-direction: column; gap: 0.5rem; flex-grow: 1; }
+        .skill-bar-background { background-color: #e5e7eb; border-radius: 0.375rem; position: relative; height: 1.25rem; }
+        .skill-bar-fill { position: absolute; top: 0; left: 0; height: 100%; border-radius: 0.375rem; transition: width 0.5s ease-in-out; }
+        .skill-score { position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); font-size: 0.75rem; line-height: 1rem; color: #1f2937; font-weight: 500; }
+        .latest-bar .skill-bar-fill { background-color: #3b82f6; }
+        .previous-bar .skill-bar-fill { background-color: #a5b4fc; }
     </style>
 </head>
 <body class="p-4">
@@ -20,43 +59,46 @@
         <div>
             <h2 class="text-xl font-bold text-gray-800 mb-3">能力分析</h2>
             <div class="bg-white p-4 rounded-xl shadow-sm">
-                <p class="text-sm text-gray-500 mb-2">最近两次能力评估对比</p>
-                <div class="flex justify-center items-center h-56">
-                    <svg viewBox="0 0 200 200" class="w-full h-full">
-                        <defs>
-                            <linearGradient id="radarGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                                <stop offset="0%" style="stop-color:rgba(59, 130, 246, 0.4)" />
-                                <stop offset="100%" style="stop-color:rgba(59, 130, 246, 0.1)" />
-                            </linearGradient>
-                        </defs>
-                        <g transform="translate(100,100)">
-                            <!-- Grid lines -->
-                            <polygon points="0,-80 76.1,-24.7 47.0,64.7 -47.0,64.7 -76.1,-24.7" fill="none" stroke="#e5e7eb" stroke-width="1"/>
-                            <polygon points="0,-60 57.1,-18.5 35.3,48.5 -35.3,48.5 -57.1,-18.5" fill="none" stroke="#e5e7eb" stroke-width="1"/>
-                            <polygon points="0,-40 38.0,-12.3 23.5,32.3 -23.5,32.3 -38.0,-12.3" fill="none" stroke="#e5e7eb" stroke-width="1"/>
-                            <polygon points="0,-20 19.0,-6.2 11.8,16.2 -11.8,16.2 -19.0,-6.2" fill="none" stroke="#e5e7eb" stroke-width="1"/>
-
-                            <!-- Axes -->
-                            <line x1="0" y1="0" x2="0" y2="-80" stroke="#e5e7eb" stroke-width="1"/><line x1="0" y1="0" x2="76.1" y2="-24.7" stroke="#e5e7eb" stroke-width="1"/><line x1="0" y1="0" x2="47.0" y2="64.7" stroke="#e5e7eb" stroke-width="1"/><line x1="0" y1="0" x2="-47.0" y2="64.7" stroke="#e5e7eb" stroke-width="1"/><line x1="0" y1="0" x2="-76.1" y2="-24.7" stroke="#e5e7eb" stroke-width="1"/>
-
-                            <!-- Data Polygon (Previous) -->
-                            <polygon points="0,-65 55,-15 20,30 -35,50 -50,-10" fill="none" stroke="#cccccc" stroke-width="1.5" stroke-dasharray="4"/>
-
-                            <!-- Data Polygon (Latest) -->
-                            <polygon points="0,-72 68.5,-22.2 28.2,38.8 -42.3,58.2 -57.1,-18.5" fill="url(#radarGradient)" stroke="#3B82F6" stroke-width="2"/>
-
-                            <!-- Labels -->
-                            <text x="0" y="-88" text-anchor="middle" font-size="10" fill="#4b5563">沟通能力</text>
-                            <text x="85" y="-22" text-anchor="start" font-size="10" fill="#4b5563">岗位匹配</text>
-                            <text x="52" y="78" text-anchor="middle" font-size="10" fill="#4b5563">逻辑思维</text>
-                            <text x="-52" y="78" text-anchor="middle" font-size="10" fill="#4b5563">技术深度</text>
-                            <text x="-85" y="-22" text-anchor="end" font-size="10" fill="#4b5563">自信心</text>
-                        </g>
-                    </svg>
+                <div class="flex justify-between items-center mb-4">
+                    <p class="text-sm text-gray-500">最近两次能力评估对比</p>
+                    <div class="flex items-center space-x-4 text-xs">
+                        <div class="flex items-center"><span class="w-3 h-3 rounded-full bg-blue-500 mr-1.5"></span>最新评估</div>
+                        <div class="flex items-center"><span class="w-3 h-3 rounded-full bg-indigo-300 mr-1.5"></span>上次评估</div>
+                    </div>
                 </div>
-                <div class="text-center text-xs text-gray-400 mt-2">
-                    <span class="inline-block align-middle"><svg width="10" height="10" viewBox="0 0 10 10" class="inline-block mr-1"><rect width="10" height="10" fill="rgba(59, 130, 246, 0.4)"/></svg>最新评估</span>
-                    <span class="inline-block align-middle ml-3"><svg width="10" height="10" viewBox="0 0 10 10" class="inline-block mr-1"><line x1="0" y1="5" x2="10" y2="5" stroke="#cccccc" stroke-width="2" stroke-dasharray="2"/></svg>上次评估</span>
+                <div class="space-y-4">
+                    <!-- Skill Item 1 -->
+                    <div class="flex items-center space-x-3">
+                        <span class="w-20 text-sm font-medium text-gray-600 shrink-0">沟通能力</span>
+                        <div class="skill-bar-group">
+                            <div class="skill-bar-background previous-bar"><div class="skill-bar-fill" style="width: 75%;"></div><span class="skill-score">75</span></div>
+                            <div class="skill-bar-background latest-bar"><div class="skill-bar-fill" style="width: 85%;"></div><span class="skill-score">85</span></div>
+                        </div>
+                    </div>
+                    <!-- Skill Item 2 -->
+                    <div class="flex items-center space-x-3">
+                        <span class="w-20 text-sm font-medium text-gray-600 shrink-0">技术深度</span>
+                        <div class="skill-bar-group">
+                            <div class="skill-bar-background previous-bar"><div class="skill-bar-fill" style="width: 80%;"></div><span class="skill-score">80</span></div>
+                            <div class="skill-bar-background latest-bar"><div class="skill-bar-fill" style="width: 90%;"></div><span class="skill-score">90</span></div>
+                        </div>
+                    </div>
+                    <!-- Skill Item 3 -->
+                    <div class="flex items-center space-x-3">
+                        <span class="w-20 text-sm font-medium text-gray-600 shrink-0">逻辑思维</span>
+                        <div class="skill-bar-group">
+                            <div class="skill-bar-background previous-bar"><div class="skill-bar-fill" style="width: 70%;"></div><span class="skill-score">70</span></div>
+                            <div class="skill-bar-background latest-bar"><div class="skill-bar-fill" style="width: 80%;"></div><span class="skill-score">80</span></div>
+                        </div>
+                    </div>
+                     <!-- Skill Item 4 -->
+                    <div class="flex items-center space-x-3">
+                        <span class="w-20 text-sm font-medium text-gray-600 shrink-0">岗位匹配</span>
+                        <div class="skill-bar-group">
+                            <div class="skill-bar-background previous-bar"><div class="skill-bar-fill" style="width: 65%;"></div><span class="skill-score">65</span></div>
+                            <div class="skill-bar-background latest-bar"><div class="skill-bar-fill" style="width: 75%;"></div><span class="skill-score">75</span></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -72,86 +114,67 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Mock data representing opportunities from the database/localStorage
-            const mockOpportunities = [
+            const mockActionSuggestions = [
                 {
-                    position: '前端开发工程师',
-                    company: '谷歌 (Google)',
-                    status: '面试中',
-                    jd: '负责谷歌搜索前端界面的开发与维护...'
+                    "type": "interviewing",
+                    "text": "您有2个面试中的机会，建议进行面试演练。",
+                    "action": "practiceInterview",
+                    "icon": "🎙️"
                 },
                 {
-                    position: '产品经理',
-                    company: '字节跳动',
-                    status: '待投递',
-                    jd: '负责抖音用户增长策略的制定和执行...'
+                    "type": "pending",
+                    "text": "您有1个待投递的机会，建议生成定制简历。",
+                    "action": "generateResume",
+                    "icon": "📝"
                 },
                 {
-                    position: '后端工程师',
-                    company: 'Meta',
-                    status: '已投递',
-                    jd: '负责Facebook核心社交功能的后端服务开发...'
-                },
-                {
-                    position: '数据科学家',
-                    company: '网飞 (Netflix)',
-                    status: '已结束',
-                    jd: '负责内容推荐算法的研发与优化...'
+                    "type": "submitted",
+                    "text": "您有1个已投递的机会，建议预测面试问题。",
+                    "action": "predictQuestions",
+                    "icon": "🧠"
                 }
             ];
 
             const suggestionsContainer = document.getElementById('action-suggestions');
 
-            function getActionItemHTML(opp) {
-                let actionText, buttonText, buttonIcon, link, bgColor, textColor;
+            function getActionItemHTML(suggestion) {
+                let actionButtonText = '';
+                let statusToFilter = '';
 
-                const detailPageUrl = `opportunity-detail.html?position=${encodeURIComponent(opp.position)}&company=${encodeURIComponent(opp.company)}&jd=${encodeURIComponent(opp.jd || '')}`;
-
-                switch (opp.status) {
-                    case '面试中':
-                        actionText = `<strong>${opp.company}</strong> 的面试正在进行中`;
-                        buttonText = '进行面试演练';
-                        buttonIcon = 'fa-microphone';
-                        link = `${detailPageUrl}#practice`; // Example hash to trigger action
-                        bgColor = 'bg-purple-100';
-                        textColor = 'text-purple-800';
+                switch (suggestion.type) {
+                    case 'interviewing':
+                        actionButtonText = '进行面试演练';
+                        statusToFilter = '面试中';
                         break;
-                    case '待投递':
-                        actionText = `准备申请 <strong>${opp.company} - ${opp.position}</strong>`;
-                        buttonText = '生成定制简历';
-                        buttonIcon = 'fa-file-alt';
-                        link = `${detailPageUrl}#resume`; // Example hash
-                        bgColor = 'bg-blue-100';
-                        textColor = 'text-blue-800';
+                    case 'pending':
+                        actionButtonText = '生成定制简历';
+                        statusToFilter = '待投递';
                         break;
-                    case '已投递':
-                    case '笔试中':
-                        actionText = `为 <strong>${opp.company}</strong> 做好面试准备`;
-                        buttonText = '预测面试问题';
-                        buttonIcon = 'fa-brain';
-                        link = `${detailPageUrl}#qa`; // Example hash
-                        bgColor = 'bg-yellow-100';
-                        textColor = 'text-yellow-800';
+                    case 'submitted':
+                        actionButtonText = '预测面试问题';
+                        statusToFilter = '已投递';
                         break;
                     default:
-                        return ''; // Don't show anything for '已发Offer' or '已结束'
+                        actionButtonText = '查看';
                 }
 
+                const link = `opportunities.html?status=${encodeURIComponent(statusToFilter)}`;
+
                 return `
-                    <a href="${link}" class="block bg-white p-4 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                        <div class="flex items-center justify-between">
-                            <p class="text-sm text-gray-700">${actionText}</p>
-                            <div class="${bgColor} ${textColor} text-xs font-bold px-4 py-2 rounded-full flex items-center space-x-2">
-                                <i class="fa-solid ${buttonIcon}"></i>
-                                <span>${buttonText}</span>
-                            </div>
+                    <a href="${link}" class="suggestion-item">
+                        <div>
+                            <p class="suggestion-title">${suggestion.text}</p>
+                        </div>
+                        <div class="action-button-wrapper">
+                            <span class="action-button-text">${actionButtonText}</span>
+                            <span class="action-icon">${suggestion.icon}</span>
                         </div>
                     </a>
                 `;
             }
 
             function renderSuggestions() {
-                const content = mockOpportunities.map(getActionItemHTML).join('');
+                const content = mockActionSuggestions.map(getActionItemHTML).join('');
                 if (content) {
                     suggestionsContainer.innerHTML = content;
                 } else {

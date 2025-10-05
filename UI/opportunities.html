@@ -19,11 +19,27 @@
     </style>
 </head>
 <body class="p-4 pb-20">
-    <div class="flex justify-between items-center mb-6">
+    <div class="flex justify-between items-center mb-4">
         <h1 class="text-2xl font-bold text-gray-800">机会列表</h1>
         <button id="add-opportunity-btn" class="bg-blue-500 text-white w-10 h-10 rounded-full shadow-lg hover:bg-blue-600 transition flex items-center justify-center">
             <i class="fa-solid fa-plus"></i>
         </button>
+    </div>
+
+    <!-- Search and Filter Controls -->
+    <div class="flex space-x-2 mb-6">
+        <div class="flex-grow relative">
+            <input type="text" id="search-input" class="w-full pl-10 pr-4 py-2 border rounded-lg" placeholder="搜索职位或公司...">
+            <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+        </div>
+        <select id="filter-select" class="border rounded-lg px-3 py-2">
+            <option>全部</option>
+            <option>待投递</option>
+            <option>已投递</option>
+            <option>面试中</option>
+            <option>已发Offer</option>
+            <option>已结束</option>
+        </select>
     </div>
 
     <div id="opportunity-list" class="space-y-4"></div>
@@ -47,7 +63,7 @@
                         <div>
                             <label for="status" class="block font-medium text-gray-700">投递状态</label>
                             <select id="status" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm">
-                                <option>待投递</option><option>已投递</option><option>笔试中</option><option>面试中</option><option>已发Offer</option><option>已结束</option>
+                                <option>待投递</option><option>已投递</option><option>面试中</option><option>已发Offer</option><option>已结束</option>
                             </select>
                         </div>
                         <div>
@@ -83,13 +99,17 @@
         const form = document.getElementById('opportunity-form');
         const editingIdInput = document.getElementById('editing-id');
 
-        let opportunities = [];
+        const searchInput = document.getElementById('search-input');
+        const filterSelect = document.getElementById('filter-select');
+
+        let allOpportunities = []; // Store the master list
+
         const statusMap = {
-            '待投递': { color: 'purple', text: '待投递' }, '已投递': { color: 'yellow', text: '已投递' }, '笔试中': { color: 'indigo', text: '笔试中' },
+            '待投递': { color: 'purple', text: '待投递' }, '已投递': { color: 'yellow', text: '已投递' },
             '面试中': { color: 'blue', text: '面试中' }, '已发Offer': { color: 'green', text: 'Offer' }, '已结束': { color: 'gray', text: '已结束' },
         };
         const statusIconMap = {
-            '待投递': 'fa-paper-plane', '已投递': 'fa-paper-plane', '笔试中': 'fa-keyboard',
+            '待投递': 'fa-paper-plane', '已投递': 'fa-paper-plane',
             '面试中': 'fa-calendar-alt', '已发Offer': 'fa-check-circle', '已结束': 'fa-times-circle',
         };
 
@@ -123,7 +143,20 @@
             </div>`;
         }
 
-        function renderList() { opportunityList.innerHTML = opportunities.map(createCardHTML).join(''); }
+        function renderList(opps) { opportunityList.innerHTML = opps.map(createCardHTML).join(''); }
+
+        function applyFilters() {
+            const searchQuery = searchInput.value.toLowerCase();
+            const filterStatus = filterSelect.value;
+
+            let filteredOpps = allOpportunities.filter(opp => {
+                const matchesSearch = opp.position.toLowerCase().includes(searchQuery) || opp.company.toLowerCase().includes(searchQuery);
+                const matchesFilter = filterStatus === '全部' || opp.status === filterStatus;
+                return matchesSearch && matchesFilter;
+            });
+
+            renderList(filteredOpps);
+        }
         
         function showPopup() {
             popup.classList.remove('hidden');
@@ -166,16 +199,19 @@
             if (!oppData.company || !oppData.position) { alert('公司和职位名称为必填项！'); return; }
 
             if (id) { // Editing
-                const index = opportunities.findIndex(o => o.id === id);
-                opportunities[index] = { ...opportunities[index], ...oppData };
+                const index = allOpportunities.findIndex(o => o.id === id);
+                allOpportunities[index] = { ...allOpportunities[index], ...oppData };
             } else { // Adding
-                opportunities.unshift({ ...oppData, id: generateId() });
+                allOpportunities.unshift({ ...oppData, id: generateId() });
             }
-            renderList();
+            applyFilters();
             hidePopup();
         });
 
-        // Swipe Logic (same as before)
+        searchInput.addEventListener('input', applyFilters);
+        filterSelect.addEventListener('change', applyFilters);
+
+        // Swipe Logic
         let activeCard = null;
         let startX = 0;
         let currentX = 0;
@@ -211,7 +247,7 @@
             } else {
                 cardContent.style.transform = 'translateX(0px)';
                 if (Math.abs(currentX) < 5) {
-                    const opp = opportunities.find(o => o.id === activeCard.dataset.id);
+                    const opp = allOpportunities.find(o => o.id === activeCard.dataset.id);
                     if (opp) window.location.href = `opportunity-detail.html?position=${encodeURIComponent(opp.position)}&company=${encodeURIComponent(opp.company)}&jd=${encodeURIComponent(opp.jd || '')}`;
                 }
                 activeCard = null;
@@ -224,12 +260,12 @@
             if (!id) return;
             if (e.target.classList.contains('delete-btn')) {
                 if (confirm('确定要删除这个机会吗？')) {
-                    opportunities = opportunities.filter(o => o.id !== id);
-                    renderList();
+                    allOpportunities = allOpportunities.filter(o => o.id !== id);
+                    applyFilters();
                 }
             }
             if (e.target.classList.contains('edit-btn')) {
-                const opp = opportunities.find(o => o.id === id);
+                const opp = allOpportunities.find(o => o.id === id);
                 popupTitle.textContent = '编辑机会';
                 editingIdInput.value = opp.id;
                 document.getElementById('company-name').value = opp.company;
@@ -246,13 +282,21 @@
         document.addEventListener('click', (e) => { if (!e.target.closest('.swipe-container')) closeActiveCard(); }, true);
 
         // Initial Load
-        opportunities = [
+        allOpportunities = [
             { id: generateId(), position: '前端开发工程师', company: '谷歌 (Google)', status: '面试中', latest_progress: '下一轮: 技术二面 (明天)' },
             { id: generateId(), position: '后端工程师', company: 'Meta', status: '已投递', latest_progress: '3天前已申请' },
             { id: generateId(), position: '产品经理', company: '亚马逊 (Amazon)', status: '已发Offer', latest_progress: '已收到Offer, 待确认' },
             { id: generateId(), position: '数据科学家', company: '网飞 (Netflix)', status: '已结束', latest_progress: '流程已终止' }
         ];
-        renderList();
+
+        // Handle status from URL parameter
+        const params = new URLSearchParams(window.location.search);
+        const statusFromUrl = params.get('status');
+        if (statusFromUrl) {
+            filterSelect.value = statusFromUrl;
+        }
+
+        applyFilters();
     </script>
 </body>
 </html>

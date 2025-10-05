@@ -21,7 +21,7 @@
     <!-- Header -->
     <div class="bg-white shadow-sm pb-4">
         <div class="container mx-auto p-4">
-            <a href="interviews.html" class="text-blue-600 text-sm mb-2 block">&larr; 返回列表</a>
+            <a href="opportunities.html" class="text-blue-600 text-sm mb-2 block">&larr; 返回列表</a>
             <h1 id="opportunity-title" class="text-2xl font-bold text-gray-800"></h1>
             <p id="opportunity-company" class="text-gray-500"></p>
         </div>
@@ -141,9 +141,36 @@
                         <p class="text-sm text-gray-500">综合评分</p>
                         <p id="report-score" class="text-6xl font-bold text-blue-600"></p>
                     </div>
-                    <!-- Radar Chart -->
-                    <div class="h-56">
-                        <svg id="report-radar-chart" viewBox="0 0 200 200" class="w-full h-full"></svg>
+                    <!-- Bar Chart -->
+                    <div id="report-bar-chart" class="space-y-3 my-6">
+                        <!-- Skill Item 1 -->
+                        <div class="flex items-center space-x-3">
+                            <span class="w-24 text-sm font-medium text-gray-600 shrink-0">沟通能力</span>
+                            <div class="w-full bg-gray-200 rounded-full h-5">
+                                <div class="bg-blue-500 h-5 rounded-full text-right pr-2 text-white text-xs leading-5 flex items-center justify-end" style="width: 85%;">85</div>
+                            </div>
+                        </div>
+                        <!-- Skill Item 2 -->
+                        <div class="flex items-center space-x-3">
+                            <span class="w-24 text-sm font-medium text-gray-600 shrink-0">技术深度</span>
+                            <div class="w-full bg-gray-200 rounded-full h-5">
+                                <div class="bg-blue-500 h-5 rounded-full text-right pr-2 text-white text-xs leading-5 flex items-center justify-end" style="width: 90%;">90</div>
+                            </div>
+                        </div>
+                        <!-- Skill Item 3 -->
+                        <div class="flex items-center space-x-3">
+                            <span class="w-24 text-sm font-medium text-gray-600 shrink-0">逻辑思维</span>
+                            <div class="w-full bg-gray-200 rounded-full h-5">
+                                <div class="bg-blue-500 h-5 rounded-full text-right pr-2 text-white text-xs leading-5 flex items-center justify-end" style="width: 80%;">80</div>
+                            </div>
+                        </div>
+                        <!-- Skill Item 4 -->
+                        <div class="flex items-center space-x-3">
+                            <span class="w-24 text-sm font-medium text-gray-600 shrink-0">STAR原则</span>
+                            <div class="w-full bg-gray-200 rounded-full h-5">
+                                <div class="bg-blue-500 h-5 rounded-full text-right pr-2 text-white text-xs leading-5 flex items-center justify-end" style="width: 75%;">75</div>
+                            </div>
+                        </div>
                     </div>
                     <!-- Overall Feedback -->
                     <div>
@@ -182,19 +209,18 @@
             <p class="font-bold">面试演练中 (<span id="question-counter">1/3</span>)</p>
             <button id="close-practice-btn" class="text-2xl">&times;</button>
         </div>
-        <div class="flex-grow flex flex-col justify-center items-center text-center">
+        <div class="flex-grow flex flex-col justify-center items-center text-center w-full">
             <h2 class="text-2xl font-semibold mb-8" id="practice-question"></h2>
-            <div id="practice-initial-state">
-                <button id="start-recording-btn" class="bg-red-600 w-24 h-24 rounded-full flex flex-col items-center justify-center shadow-lg">
-                    <i class="fas fa-microphone text-3xl"></i>
-                    <span class="text-sm mt-1">开始回答</span>
-                </button>
+
+            <div id="practice-answering-state" class="w-full max-w-lg text-left">
+                <textarea id="answer-textarea" class="w-full h-40 p-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400" placeholder="请输入你的回答..."></textarea>
+                <p class="text-xs text-gray-400 mt-2 text-center">💡 您可以使用手机自带的语音输入法进行回答</p>
+                <button id="submit-answer-btn" class="w-full bg-blue-600 text-white font-bold py-3 mt-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-500">提交回答</button>
             </div>
-            <div id="practice-recording-state" class="hidden">
-                <p class="text-lg mb-4">正在录音中... <span id="timer">00:00</span></p>
-                <button id="stop-recording-btn" class="bg-gray-600 w-24 h-24 rounded-full flex items-center justify-center shadow-lg">■</button>
-            </div>
-            <div id="practice-feedback-state" class="hidden w-full max-w-md text-left bg-gray-700 p-4 rounded-lg">
+
+            <div id="practice-feedback-state" class="hidden w-full max-w-lg text-left bg-gray-700 p-4 rounded-lg">
+                <h4 class="font-bold mb-2">你的回答:</h4>
+                <p id="user-answer-transcript" class="text-sm mb-4 bg-gray-800 p-2 rounded"></p>
                 <h4 class="font-bold mb-2">AI 反馈:</h4>
                 <p id="ai-feedback-text" class="text-sm"></p>
             </div>
@@ -266,11 +292,11 @@
                 closePracticeBtn: getEl('close-practice-btn'),
                 practiceQuestion: getEl('practice-question'),
                 questionCounter: getEl('question-counter'),
-                practiceInitialState: getEl('practice-initial-state'),
-                practiceRecordingState: getEl('practice-recording-state'),
+                practiceAnsweringState: getEl('practice-answering-state'),
                 practiceFeedbackState: getEl('practice-feedback-state'),
-                startRecordingBtn: getEl('start-recording-btn'),
-                stopRecordingBtn: getEl('stop-recording-btn'),
+                answerTextarea: getEl('answer-textarea'),
+                submitAnswerBtn: getEl('submit-answer-btn'),
+                userAnswerTranscript: getEl('user-answer-transcript'),
                 aiFeedbackText: getEl('ai-feedback-text'),
                 nextQuestionBtn: getEl('next-question-btn'),
                 showAnswerBtn: getEl('show-answer-btn'),
@@ -439,16 +465,7 @@
             });
 
             // 4.4 Interview Practice & Report Logic
-            function renderRadarChart(targetElement) {
-                targetElement.innerHTML = `
-                    <defs><linearGradient id="radarGradient" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:rgba(59, 130, 246, 0.4)" /><stop offset="100%" style="stop-color:rgba(59, 130, 246, 0.1)" /></linearGradient></defs>
-                    <g transform="translate(100,100)">
-                        <polygon points="0,-80 76.1,-24.7 47.0,64.7 -47.0,64.7 -76.1,-24.7" fill="none" stroke="#e5e7eb" stroke-width="1"/><polygon points="0,-60 57.1,-18.5 35.3,48.5 -35.3,48.5 -57.1,-18.5" fill="none" stroke="#e5e7eb" stroke-width="1"/><polygon points="0,-40 38.0,-12.3 23.5,32.3 -23.5,32.3 -38.0,-12.3" fill="none" stroke="#e5e7eb" stroke-width="1"/><polygon points="0,-20 19.0,-6.2 11.8,16.2 -11.8,16.2 -19.0,-6.2" fill="none" stroke="#e5e7eb" stroke-width="1"/>
-                        <line x1="0" y1="0" x2="0" y2="-80" stroke="#e5e7eb" stroke-width="1"/><line x1="0" y1="0" x2="76.1" y2="-24.7" stroke="#e5e7eb" stroke-width="1"/><line x1="0" y1="0" x2="47.0" y2="64.7" stroke="#e5e7eb" stroke-width="1"/><line x1="0" y1="0" x2="-47.0" y2="64.7" stroke="#e5e7eb" stroke-width="1"/><line x1="0" y1="0" x2="-76.1" y2="-24.7" stroke="#e5e7eb" stroke-width="1"/>
-                        <polygon points="0,-${Math.random()*20+60} ${Math.random()*20+60},-22.2 28.2,${Math.random()*20+40} -42.3,58.2 -${Math.random()*20+50},-18.5" fill="url(#radarGradient)" stroke="#3B82F6" stroke-width="2"/>
-                        <text x="0" y="-88" text-anchor="middle" font-size="10" fill="#4b5563">沟通能力</text><text x="85" y="-22" text-anchor="start" font-size="10" fill="#4b5563">岗位匹配</text><text x="52" y="78" text-anchor="middle" font-size="10" fill="#4b5563">逻辑思维</text><text x="-52" y="78" text-anchor="middle" font-size="10" fill="#4b5563">技术深度</text><text x="-85" y="-22" text-anchor="end" font-size="10" fill="#4b5563">STAR原则</text>
-                    </g>`;
-            }
+
 
             function renderHistoryList() {
                 if (opportunityData.interviewHistory.length === 0) {
@@ -472,7 +489,6 @@
 
                 elements.reportScore.textContent = session.score;
                 elements.reportFeedback.textContent = session.summary;
-                renderRadarChart(elements.reportRadarChart);
 
                 elements.reportSessionDetails.innerHTML = session.answeredQuestions.map(qa => `
                     <div class="bg-gray-50 p-3 rounded-lg border">
@@ -541,9 +557,10 @@
             function displayQuestion(index) {
                 elements.practiceQuestion.textContent = opportunityData.generatedQA[index].q;
                 elements.questionCounter.textContent = `${index + 1}/${opportunityData.generatedQA.length}`;
-                elements.practiceInitialState.classList.remove('hidden');
-                elements.practiceRecordingState.classList.add('hidden');
+                elements.practiceAnsweringState.classList.remove('hidden');
                 elements.practiceFeedbackState.classList.add('hidden');
+                elements.answerTextarea.value = ''; // Clear textarea
+                elements.submitAnswerBtn.disabled = true; // Disable button initially
                 
                 if (index === opportunityData.generatedQA.length - 1) {
                     elements.nextQuestionBtn.textContent = '完成面试，查看评估';
@@ -554,19 +571,31 @@
                 }
             }
 
+            elements.answerTextarea.addEventListener('input', () => {
+                elements.submitAnswerBtn.disabled = elements.answerTextarea.value.trim() === '';
+            });
+
+            elements.submitAnswerBtn.addEventListener('click', () => {
+                const answer = elements.answerTextarea.value;
+                elements.userAnswerTranscript.textContent = answer;
+                elements.aiFeedbackText.textContent = "模拟AI反馈：回答得不错，逻辑清晰。可以尝试补充更多数据来支撑你的论点。";
+                elements.practiceAnsweringState.classList.add('hidden');
+                elements.practiceFeedbackState.classList.remove('hidden');
+            });
+
             elements.closePracticeBtn.addEventListener('click', () => {
                 if (confirm("您确定要提前结束本次面试吗？系统将根据您已完成的回答生成一份评估报告。")) {
                     finishInterview(true);
                 }
             });
 
-            elements.stopRecordingBtn.addEventListener('click', () => {
-                elements.practiceRecordingState.classList.add('hidden');
-                elements.practiceFeedbackState.classList.remove('hidden');
-                elements.aiFeedbackText.textContent = "模拟AI反馈：回答得不错，逻辑清晰。可以尝试补充更多数据来支撑你的论点。";
-            });
-
             elements.nextQuestionBtn.addEventListener('click', () => {
+                // Check if feedback for the current question has been shown
+                if (elements.practiceFeedbackState.classList.contains('hidden')) {
+                    alert('请先提交当前问题的回答。');
+                    return;
+                }
+
                 if (currentQuestionIndex === opportunityData.generatedQA.length - 1) {
                     finishInterview(false);
                 } else {

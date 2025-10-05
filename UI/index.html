@@ -14,13 +14,16 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <style>
         body { background-color: #f0f2f5; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-        .iphone-container { width: 393px; height: 852px; background-color: #ffffff; border-radius: 50px; box-shadow: 0 10px 30px rgba(0,0,0,0.1), 0 0 0 10px #111; display: flex; flex-direction: column; overflow: hidden; position: relative; }
-        .status-bar { height: 44px; display: flex; justify-content: space-between; align-items: center; padding: 0 24px; color: #1f2937; font-weight: 600; font-size: 15px; flex-shrink: 0; z-index: 10; background: #fff; }
-        .status-bar .time { position: absolute; left: 50%; transform: translateX(-50%); }
-        .main-content { flex-grow: 1; overflow: hidden; position: relative; }
-        .tab-bar { height: 84px; background-color: rgba(249, 249, 249, 0.8); backdrop-filter: blur(10px); border-top: 1px solid #e5e5e5; display: flex; justify-content: space-around; align-items: flex-start; padding-top: 10px; position: absolute; bottom: 0; width: 100%; z-index: 10; }
+        .iphone-container { width: 393px; height: 852px; background-color: #ffffff; border-radius: 50px; box-shadow: 0 10px 30px rgba(0,0,0,0.1), 0 0 0 10px #111; display: flex; flex-direction: column; overflow: hidden; }
+        .status-bar { height: 44px; display: flex; justify-content: space-between; align-items: center; padding: 0 24px; color: #1f2937; font-weight: 600; font-size: 15px; flex-shrink: 0; }
+        .main-content { flex-grow: 1; overflow-y: auto; /* Let this container scroll */ }
+        .tab-bar { height: 84px; background-color: rgba(249, 249, 249, 0.95); backdrop-filter: blur(10px); border-top: 1px solid #e5e5e5; display: flex; justify-content: space-around; align-items: flex-start; padding-top: 10px; width: 100%; flex-shrink: 0; }
         .tab-item { cursor: pointer; display: flex; flex-direction: column; align-items: center; font-size: 10px; color: #8e8e93; }
-        .tab-item i { font-size: 22px; margin-bottom: 4px; }
+        .tab-item .icon-wrapper { position: relative; width: 22px; height: 22px; margin-bottom: 4px; }
+        .tab-item img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        .tab-item .icon-active { display: none; }
+        .tab-item.active .icon-normal { display: none; }
+        .tab-item.active .icon-active { display: block; }
         .tab-item.active { color: #007aff; }
         iframe { width: 100%; height: 100%; border: none; }
     </style>
@@ -35,10 +38,28 @@
         <main class="main-content">
             <iframe id="content-frame" src="dashboard.html"></iframe>
         </main>
-        <div id="tab-bar" class="tab-bar">
-            <div class="tab-item active" data-page="dashboard.html"><i class="fa-solid fa-chart-pie"></i><span>动态</span></div>
-            <div class="tab-item" data-page="interviews.html"><i class="fa-solid fa-briefcase"></i><span>机会</span></div>
-            <div class="tab-item" data-page="profile.html"><i class="fa-solid fa-user"></i><span>我的</span></div>
+        <div class="tab-bar">
+            <div class="tab-item active" data-page="dashboard.html">
+                <div class="icon-wrapper">
+                    <img class="icon-normal" src="images/tab_dashboard.png" alt="动态">
+                    <img class="icon-active" src="images/tab_dashboard_active.png" alt="动态">
+                </div>
+                <span>动态</span>
+            </div>
+            <div class="tab-item" data-page="opportunities.html">
+                <div class="icon-wrapper">
+                    <img class="icon-normal" src="images/tab_opportunities.png" alt="机会">
+                    <img class="icon-active" src="images/tab_opportunities_active.png" alt="机会">
+                </div>
+                <span>机会</span>
+            </div>
+            <div class="tab-item" data-page="profile.html">
+                <div class="icon-wrapper">
+                    <img class="icon-normal" src="images/tab_profile.png" alt="我的">
+                    <img class="icon-active" src="images/tab_profile_active.png" alt="我的">
+                </div>
+                <span>我的</span>
+            </div>
         </div>
     </div>
 
@@ -47,29 +68,43 @@
             const tabs = document.querySelectorAll('.tab-item');
             const contentFrame = document.getElementById('content-frame');
 
-            const activateTab = (tabToActivate) => {
-                const newUrl = tabToActivate.dataset.page;
-                if (newUrl && contentFrame.src.endsWith(newUrl) === false) {
-                    contentFrame.src = newUrl;
-                }
-                tabs.forEach(t => t.classList.remove('active'));
-                tabToActivate.classList.add('active');
+            const updateActiveTab = (pageName) => {
+                tabs.forEach(tab => {
+                    const cleanPageName = pageName || 'dashboard.html';
+                    if (tab.dataset.page === cleanPageName) {
+                        tab.classList.add('active');
+                    } else {
+                        tab.classList.remove('active');
+                    }
+                });
             };
 
             tabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    activateTab(tab);
+                tab.addEventListener('click', (e) => {
+                    const tabToActivate = e.currentTarget;
+                    const newUrl = tabToActivate.dataset.page;
+                    try {
+                        const currentPageName = contentFrame.contentWindow.location.pathname.split('/').pop();
+                        if (newUrl && newUrl !== currentPageName) {
+                            contentFrame.src = newUrl;
+                        }
+                    } catch (e) {
+                        contentFrame.src = newUrl;
+                        console.error("Error accessing iframe location, falling back to basic navigation.", e);
+                    }
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabToActivate.classList.add('active');
                 });
             });
 
-            // Handle hash on initial page load for the 'Back to List' feature
-            const hash = window.location.hash.substring(1);
-            if (hash === 'interviews') {
-                const interviewsTab = document.querySelector('.tab-item[data-page="interviews.html"]');
-                if (interviewsTab) {
-                    activateTab(interviewsTab);
+            contentFrame.addEventListener('load', () => {
+                try {
+                    const loadedPageName = contentFrame.contentWindow.location.pathname.split('/').pop();
+                    updateActiveTab(loadedPageName);
+                } catch (e) {
+                    console.error("Could not access iframe content.", e);
                 }
-            }
+            });
         });
     </script>
 </body>
