@@ -232,425 +232,862 @@
         </div>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // --- 1. DATA STORE ---
-            const params = new URLSearchParams(window.location.search);
-            const opportunityData = {
-                position: params.get('position') || '机会详情',
-                company: params.get('company') || '公司信息',
-                jd: params.get('jd') || '未能加载岗位描述。',
-                generatedResume: null,
-                generatedQA: [],
-                interviewHistory: []
-            };
-            let currentQuestionIndex = 0;
+        <script>
 
-            // --- 2. DOM ELEMENTS ---
-            const getEl = (id) => document.getElementById(id);
-            const queryEl = (sel) => document.querySelector(sel);
-            const queryElAll = (sel) => document.querySelectorAll(sel);
-            const elements = {
-                title: getEl('opportunity-title'),
-                company: getEl('opportunity-company'),
-                jd: getEl('opportunity-jd'),
-                mainActionResume: getEl('main-action-resume'),
-                mainActionPractice: getEl('main-action-practice'),
-                practiceInitialBtn: getEl('practice-initial-btn'),
-                practiceLoadingState: getEl('practice-loading-state'),
-                practiceConfirmState: getEl('practice-confirm-state'),
-                startPracticeBtn: getEl('start-practice-btn'),
-                keywordModal: getEl('keyword-modal'),
-                cancelKeywordBtn: getEl('cancel-keyword-btn'),
-                generateWithKeywordBtn: getEl('generate-with-keyword-btn'),
-                resumeKeywordsInput: getEl('resume-keywords'),
-                practiceOverlay: getEl('practice-overlay'),
-                secondaryTabs: queryElAll('.secondary-tab'),
-                tabContents: queryElAll('.tab-content'),
-                resumePlaceholder: getEl('resume-placeholder'),
-                resumeContentContainer: getEl('resume-content-container'),
-                resumeDisplayMode: getEl('resume-display-mode'),
-                resumeEditMode: getEl('resume-edit-mode'),
-                resumeEditBtn: getEl('resume-edit-btn'),
-                resumeDownloadBtn: getEl('resume-download-btn'),
-                resumeSaveBtn: getEl('resume-save-btn'),
-                resumeCancelBtn: getEl('resume-cancel-btn'),
-                resumeEditor: getEl('resume-editor'),
-                resumePreviewArea: getEl('resume-preview-area'),
-                qaControls: getEl('qa-controls'),
-                qaPlaceholder: getEl('qa-placeholder'),
-                qaListContainer: getEl('qa-list-container'),
-                addQaBtn: getEl('add-qa-btn'),
-                saveQaBtn: getEl('save-qa-btn'),
-                reportPlaceholder: getEl('report-placeholder'),
-                reportContentContainer: getEl('report-content-container'),
-                reportScore: getEl('report-score'),
-                reportRadarChart: getEl('report-radar-chart'),
-                reportFeedback: getEl('report-feedback'),
-                reportSessionDetailsContainer: getEl('report-session-details-container'),
-                reportSessionDetails: getEl('report-session-details'),
-                reportHistoryList: getEl('report-history-list'),
-                closePracticeBtn: getEl('close-practice-btn'),
-                practiceQuestion: getEl('practice-question'),
-                questionCounter: getEl('question-counter'),
-                practiceAnsweringState: getEl('practice-answering-state'),
-                practiceFeedbackState: getEl('practice-feedback-state'),
-                answerTextarea: getEl('answer-textarea'),
-                submitAnswerBtn: getEl('submit-answer-btn'),
-                userAnswerTranscript: getEl('user-answer-transcript'),
-                aiFeedbackText: getEl('ai-feedback-text'),
-                nextQuestionBtn: getEl('next-question-btn'),
-                showAnswerBtn: getEl('show-answer-btn'),
+            document.addEventListener('DOMContentLoaded', () => {
 
-                // New elements for JD analysis
-                analyzeJdBtn: getEl('analyze-jd-btn'),
-                jdAnalysisResults: getEl('jd-analysis-results'),
-                keywordsList: getEl('keywords-list'),
-                preMatchText: getEl('pre-match-text'),
-            };
+                // --- 1. DATA STORE ---
 
-            // --- 3. INITIAL PAGE SETUP ---
-            elements.title.textContent = opportunityData.position;
-            elements.company.textContent = opportunityData.company;
-            elements.jd.textContent = opportunityData.jd;
+                const params = new URLSearchParams(window.location.search);
 
-            // --- 4. LOGIC & EVENT HANDLERS ---
+                const opportunityData = {
 
-            const activateTab = (tabName) => queryEl(`.secondary-tab[data-tab='${tabName}']`)?.click();
+                    position: params.get('position') || '机会详情',
 
-            function downloadResumeAsPDF() {
-                const resumeContent = elements.resumePreviewArea.innerHTML;
-                const position = opportunityData.position;
-                const company = opportunityData.company;
-                const filename = `${company}_${position}_简历.pdf`;
+                    company: params.get('company') || '公司信息',
 
-                // Create a printable element
-                const printElement = document.createElement('div');
-                
-                // Basic A4 styling
-                printElement.style.width = '210mm';
-                printElement.style.minHeight = '297mm';
-                printElement.style.padding = '20mm';
-                printElement.style.fontFamily = `'Helvetica Neue', Helvetica, Arial, sans-serif`;
-                printElement.style.fontSize = '11pt';
-                printElement.style.color = '#333';
-                
-                printElement.innerHTML = resumeContent;
+                    jd: params.get('jd') || '未能加载岗位描述。',
 
-                // More specific styling for PDF
-                const style = document.createElement('style');
-                style.innerHTML = `
-                    @media print {
-                        body { -webkit-print-color-adjust: exact; }
-                    }
-                    h1, h2, h3, h4, h5, h6 { 
-                        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-                        color: #000;
-                        margin-top: 1.2em;
-                        margin-bottom: 0.6em;
-                    }
-                    h1 { font-size: 22pt; border-bottom: 2px solid #333; padding-bottom: 4px; margin-bottom: 0.8em;}
-                    h3 { font-size: 14pt; border-bottom: 1px solid #ccc; padding-bottom: 2px; }
-                    ul { padding-left: 20px; list-style-position: outside;}
-                    p, li { line-height: 1.5; }
-                    hr { display: none; }
-                `;
-                printElement.prepend(style);
+                    generatedResume: null,
 
-                const opt = {
-                    margin: 0,
-                    filename: filename,
-                    image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                    generatedQA: [],
+
+                    interviewHistory: []
+
                 };
 
-                // Use html2pdf to generate and download
-                html2pdf().from(printElement).set(opt).save();
-            }
+                let currentQuestionIndex = 0;
 
-            // 4.1 Secondary Tabs Logic
-            elements.secondaryTabs.forEach(button => {
-                button.addEventListener('click', () => {
-                    elements.secondaryTabs.forEach(btn => btn.classList.remove('active'));
-                    button.classList.add('active');
-                    elements.tabContents.forEach(content => content.classList.toggle('hidden', content.id !== `tab-${button.dataset.tab}`));
-                });
-            });
+    
 
-            // 4.2 Resume Generation Logic
-            elements.mainActionResume.addEventListener('click', () => elements.keywordModal.classList.remove('hidden'));
-            elements.cancelKeywordBtn.addEventListener('click', () => elements.keywordModal.classList.add('hidden'));
-            elements.generateWithKeywordBtn.addEventListener('click', () => {
-                const keywords = elements.resumeKeywordsInput.value;
-                elements.keywordModal.classList.add('hidden');
-                elements.mainActionResume.disabled = true;
-                elements.mainActionResume.querySelector('h2').textContent = 'AI 正在生成中...';
-                setTimeout(() => {
-                    const generatedMd = `# 简历 for ${opportunityData.position}\n\n## 重点突出了 ${keywords || 'AI自动判断'} 的方面\n... (这里是AI生成的简历内容) ...`;
-                    opportunityData.generatedResume = generatedMd;
-                    elements.resumeEditor.value = generatedMd;
-                    elements.resumePreviewArea.innerHTML = marked.parse(generatedMd);
-                    elements.resumePlaceholder.classList.add('hidden');
-                    elements.resumeContentContainer.classList.remove('hidden');
-                    elements.resumeDownloadBtn.classList.remove('hidden');
-                    elements.resumeEditMode.classList.add('hidden');
-                    elements.resumeDisplayMode.classList.remove('hidden');
-                    showToast("简历已生成！请在下方“简历详情”Tab中查看。");
-                    elements.mainActionResume.disabled = false;
-                    elements.mainActionResume.querySelector('h2').textContent = 'AI 生成定制简历';
-                }, 1500);
-            });
-            elements.resumeEditBtn.addEventListener('click', () => {
-                elements.resumeDisplayMode.classList.add('hidden');
-                elements.resumeEditMode.classList.remove('hidden');
-            });
-            elements.resumeCancelBtn.addEventListener('click', () => {
-                elements.resumeEditor.value = opportunityData.generatedResume;
-                elements.resumeEditMode.classList.add('hidden');
-                elements.resumeDisplayMode.classList.remove('hidden');
-            });
-            elements.resumeSaveBtn.addEventListener('click', () => {
-                opportunityData.generatedResume = elements.resumeEditor.value;
-                elements.resumePreviewArea.innerHTML = marked.parse(opportunityData.generatedResume);
-                elements.resumeEditMode.classList.add('hidden');
-                elements.resumeDisplayMode.classList.remove('hidden');
-                showToast('简历修改已保存！');
-            });
-            elements.resumeDownloadBtn.addEventListener('click', downloadResumeAsPDF);
+                // --- 1.5 MOCK AI FEEDBACK DATA ---
 
-            // 4.3 Q&A Section Logic
-            function renderQaList() {
-                if (opportunityData.generatedQA.length === 0) {
-                    elements.qaPlaceholder.classList.remove('hidden');
-                    elements.qaControls.classList.add('hidden');
-                    elements.qaListContainer.innerHTML = '';
-                } else {
-                    elements.qaPlaceholder.classList.add('hidden');
-                    elements.qaControls.classList.remove('hidden');
-                    const qaHtml = opportunityData.generatedQA.map(item => `
-                        <div class="qa-item bg-gray-50 p-3 rounded-lg border" data-id="${item.id}">
-                            <div class="flex justify-between items-start mb-2">
-                                <textarea rows="1" class="question-input font-semibold border-b-2 w-full focus:border-blue-500 outline-none bg-transparent resize-none p-1">${item.q}</textarea>
-                                <button class="delete-qa-btn text-gray-400 hover:text-red-600 ml-2 flex-shrink-0 p-1"><i class="fas fa-trash-alt"></i></button>
-                            </div>
-                            <textarea class="answer-input w-full p-2 border rounded-md text-sm" rows="4">${item.a}</textarea>
-                        </div>
-                    `).join('');
-                    elements.qaListContainer.innerHTML = qaHtml;
-                }
-            }
-            elements.addQaBtn.addEventListener('click', () => {
-                opportunityData.generatedQA.unshift({ id: Date.now(), q: '新问题...', a: '新答案...' });
-                renderQaList();
-            });
-            elements.saveQaBtn.addEventListener('click', () => {
-                const qaItems = queryElAll('.qa-item');
-                const newQAData = Array.from(qaItems).map(item => ({
-                    id: item.dataset.id,
-                    q: item.querySelector('.question-input').value,
-                    a: item.querySelector('.answer-input').value
-                })).reverse();
-                opportunityData.generatedQA = newQAData;
-                showToast('问答列表已保存！');
-            });
-            elements.qaListContainer.addEventListener('click', (e) => {
-                const deleteBtn = e.target.closest('.delete-qa-btn');
-                if (deleteBtn) {
-                    const idToDelete = deleteBtn.closest('.qa-item').dataset.id;
-                    showConfirm('确认删除', '确定要删除这个问题吗？', (confirmed) => {
-                        if (confirmed) {
-                            opportunityData.generatedQA = opportunityData.generatedQA.filter(item => String(item.id) !== idToDelete);
-                            renderQaList();
-                            showToast('删除成功');
-                        }
-                    });
-                }
-            });
+                const mockFeedback = {
 
-            // 4.4 Interview Practice & Report Logic
+                    positive: [
 
+                        '逻辑清晰，表达流畅。 ',
 
-            function renderHistoryList() {
-                if (opportunityData.interviewHistory.length === 0) {
-                    elements.reportPlaceholder.classList.remove('hidden');
-                    elements.reportContentContainer.classList.add('hidden');
-                    return;
-                }
-                elements.reportHistoryList.innerHTML = opportunityData.interviewHistory.map(session => `
-                    <div class="history-item flex justify-between items-center bg-gray-50 p-2 rounded-lg text-sm cursor-pointer hover:bg-gray-100" data-session-id="${session.id}">
-                        <span><i class="fas fa-history mr-2 text-gray-400"></i>${session.date} 模拟面试</span>
-                        <span class="font-semibold text-blue-600">${session.score}分</span>
-                    </div>`).join('');
-            }
+                        '很好地运用了STAR原则。 ',
 
-            function loadReport(sessionId) {
-                const session = opportunityData.interviewHistory.find(s => s.id === sessionId);
-                if (!session) return;
+                        '准确地展现了你的技术实力。 ',
 
-                elements.reportPlaceholder.classList.add('hidden');
-                elements.reportContentContainer.classList.remove('hidden');
+                        '回答非常切题，展现了你的思考深度。 ',
 
-                elements.reportScore.textContent = session.score;
-                elements.reportFeedback.textContent = session.summary;
+                        '这是一个很好的例子，突出了你的解决问题的能力。 '
 
-                elements.reportSessionDetails.innerHTML = session.answeredQuestions.map(qa => `
-                    <div class="bg-gray-50 p-3 rounded-lg border">
-                        <p class="font-semibold text-gray-800">${qa.q}</p>
-                        <p class="text-xs text-gray-500 mt-2">你的回答:</p>
-                        <p class="text-sm text-gray-700 p-2 bg-white rounded mt-1">${qa.a}</p>
-                        <p class="text-xs text-gray-500 mt-2">AI反馈:</p>
-                        <p class="text-sm text-green-700 p-2 bg-green-50 rounded mt-1">${qa.feedback}</p>
-                    </div>`).join('');
-                elements.reportSessionDetailsContainer.classList.remove('hidden');
-            }
+                    ],
 
-            function finishInterview(isInterrupted = false) {
-                elements.practiceOverlay.classList.add('hidden');
-                const questionsInSession = opportunityData.generatedQA.slice(0, currentQuestionIndex + 1);
-                const score = Math.floor(Math.random() * 21) + 75; // Random score 75-95
-                let summary = "本次面试表现出色，沟通流畅，技术知识扎实。在回答关于项目挑战的问题时，可以更多地使用STAR原则来构建回答，使逻辑更清晰。";
-                if (isInterrupted) {
-                    summary += ` (本次评估基于您已回答的 ${questionsInSession.length} 个问题生成。)`
-                }
+                    improvement: [
 
-                const newSession = {
-                    id: Date.now(),
-                    date: new Date().toLocaleDateString('zh-CN'),
-                    score: score,
-                    summary: summary,
-                    answeredQuestions: questionsInSession.map(qa => ({
-                        q: qa.q,
-                        a: "这是用户回答的模拟文字记录。", // Mock user answer
-                        feedback: "AI对这个回答的模拟反馈：逻辑清晰，表达流畅。" // Mock feedback
-                    }))
+                        '可以尝试用更具体的数据来支撑你的论点。 ',
+
+                        '建议更详细地说明项目背景和你在团队中的角色。 ',
+
+                        '在说明挑战时，可以进一步强调你采取行动的理由。 ',
+
+                        '如果能补充说明这个项目的结果对业务的影响会更好。 ',
+
+                        '回答可以更简洁一些，聚焦于核心要点。 '
+
+                    ],
+
+                    summaries: [
+
+                        '本次面试表现出色，沟通流畅，技术知识扎实。在回答关于项目挑战的问题时，可以更多地使用STAR原则来构建回答，使逻辑更清晰。',
+
+                        '整体表现良好，对过往项目有深入的思考。建议在未来的回答中，更主动地将自己的能力与岗位要求进行匹配，突出优势。',
+
+                        '沟通能力值得肯定，能清晰地表达自己的想法。在技术深度方面，可以准备一些更能体现复杂度的项目细节作为例子。',
+
+                        '回答基本抓住了问题的核心。为了让面试官印象更深刻，建议在每个回答的结尾进行简要总结，强调自己的收获和成长。'
+
+                    ]
+
                 };
-                opportunityData.interviewHistory.unshift(newSession);
 
-                showToast("面试完成！正在生成评估报告...");
-                setTimeout(() => {
-                    renderHistoryList();
-                    loadReport(newSession.id);
-                    activateTab('report');
-                }, 500);
-            }
+    
 
-            elements.mainActionPractice.addEventListener('click', () => {
-                elements.practiceInitialBtn.classList.add('hidden');
-                elements.practiceLoadingState.classList.remove('hidden');
-                setTimeout(() => {
-                    if (opportunityData.generatedQA.length === 0) {
-                        opportunityData.generatedQA = [
-                            { id: Date.now()+1, q: '讲一个你参与过的最有挑战性的项目。', a: 'STAR原则...' },
-                            { id: Date.now()+2, q: '你会如何优化一个React应用的性能？', a: '我会从...' },
-                            { id: Date.now()+3, q: '你对我们公司有什么了解？', a: '我了解到贵公司...' }
-                        ];
-                    }
-                    renderQaList(); // Restored this call
-                    elements.practiceLoadingState.classList.add('hidden');
-                    elements.practiceConfirmState.classList.remove('hidden');
-                }, 1500);
-            });
+                // --- 2. DOM ELEMENTS ---
 
-            elements.startPracticeBtn.addEventListener('click', () => {
-                currentQuestionIndex = 0;
-                displayQuestion(currentQuestionIndex);
-                elements.practiceOverlay.classList.remove('hidden');
-            });
+                const getEl = (id) => document.getElementById(id);
 
-            function displayQuestion(index) {
-                elements.practiceQuestion.textContent = opportunityData.generatedQA[index].q;
-                elements.questionCounter.textContent = `${index + 1}/${opportunityData.generatedQA.length}`;
-                elements.practiceAnsweringState.classList.remove('hidden');
-                elements.practiceFeedbackState.classList.add('hidden');
-                elements.answerTextarea.value = ''; // Clear textarea
-                elements.submitAnswerBtn.disabled = true; // Disable button initially
-                
-                if (index === opportunityData.generatedQA.length - 1) {
-                    elements.nextQuestionBtn.textContent = '完成面试，查看评估';
-                    elements.nextQuestionBtn.classList.replace('bg-blue-600', 'bg-green-600');
-                } else {
-                    elements.nextQuestionBtn.textContent = '下一题 →';
-                    elements.nextQuestionBtn.classList.replace('bg-green-600', 'bg-blue-600');
+                const queryEl = (sel) => document.querySelector(sel);
+
+                const queryElAll = (sel) => document.querySelectorAll(sel);
+
+                const elements = {
+
+                    title: getEl('opportunity-title'),
+
+                    company: getEl('opportunity-company'),
+
+                    jd: getEl('opportunity-jd'),
+
+                    mainActionResume: getEl('main-action-resume'),
+
+                    mainActionPractice: getEl('main-action-practice'),
+
+                    practiceInitialBtn: getEl('practice-initial-btn'),
+
+                    practiceLoadingState: getEl('practice-loading-state'),
+
+                    practiceConfirmState: getEl('practice-confirm-state'),
+
+                    startPracticeBtn: getEl('start-practice-btn'),
+
+                    keywordModal: getEl('keyword-modal'),
+
+                    cancelKeywordBtn: getEl('cancel-keyword-btn'),
+
+                    generateWithKeywordBtn: getEl('generate-with-keyword-btn'),
+
+                    resumeKeywordsInput: getEl('resume-keywords'),
+
+                    practiceOverlay: getEl('practice-overlay'),
+
+                    secondaryTabs: queryElAll('.secondary-tab'),
+
+                    tabContents: queryElAll('.tab-content'),
+
+                    resumePlaceholder: getEl('resume-placeholder'),
+
+                    resumeContentContainer: getEl('resume-content-container'),
+
+                    resumeDisplayMode: getEl('resume-display-mode'),
+
+                    resumeEditMode: getEl('resume-edit-mode'),
+
+                    resumeEditBtn: getEl('resume-edit-btn'),
+
+                    resumeDownloadBtn: getEl('resume-download-btn'),
+
+                    resumeSaveBtn: getEl('resume-save-btn'),
+
+                    resumeCancelBtn: getEl('resume-cancel-btn'),
+
+                    resumeEditor: getEl('resume-editor'),
+
+                    resumePreviewArea: getEl('resume-preview-area'),
+
+                    qaControls: getEl('qa-controls'),
+
+                    qaPlaceholder: getEl('qa-placeholder'),
+
+                    qaListContainer: getEl('qa-list-container'),
+
+                    addQaBtn: getEl('add-qa-btn'),
+
+                    saveQaBtn: getEl('save-qa-btn'),
+
+                    reportPlaceholder: getEl('report-placeholder'),
+
+                    reportContentContainer: getEl('report-content-container'),
+
+                    reportScore: getEl('report-score'),
+
+                    reportFeedback: getEl('report-feedback'),
+
+                    reportSessionDetailsContainer: getEl('report-session-details-container'),
+
+                    reportSessionDetails: getEl('report-session-details'),
+
+                    reportHistoryList: getEl('report-history-list'),
+
+                    closePracticeBtn: getEl('close-practice-btn'),
+
+                    practiceQuestion: getEl('practice-question'),
+
+                    questionCounter: getEl('question-counter'),
+
+                    practiceAnsweringState: getEl('practice-answering-state'),
+
+                    practiceFeedbackState: getEl('practice-feedback-state'),
+
+                    answerTextarea: getEl('answer-textarea'),
+
+                    submitAnswerBtn: getEl('submit-answer-btn'),
+
+                    userAnswerTranscript: getEl('user-answer-transcript'),
+
+                    aiFeedbackText: getEl('ai-feedback-text'),
+
+                    nextQuestionBtn: getEl('next-question-btn'),
+
+                    showAnswerBtn: getEl('show-answer-btn'),
+
+                    analyzeJdBtn: getEl('analyze-jd-btn'),
+
+                    jdAnalysisResults: getEl('jd-analysis-results'),
+
+                    keywordsList: getEl('keywords-list'),
+
+                    preMatchText: getEl('pre-match-text'),
+
+                };
+
+    
+
+                // --- 3. INITIAL PAGE SETUP ---
+
+                elements.title.textContent = opportunityData.position;
+
+                elements.company.textContent = opportunityData.company;
+
+                elements.jd.textContent = opportunityData.jd;
+
+    
+
+                // --- 4. LOGIC & EVENT HANDLERS ---
+
+                const activateTab = (tabName) => queryEl(`.secondary-tab[data-tab='${tabName}']`)?.click();
+
+    
+
+                const getRandomItem = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+    
+
+                function generateMockFeedback() {
+
+                    const positive = getRandomItem(mockFeedback.positive);
+
+                    const improvement = getRandomItem(mockFeedback.improvement);
+
+                    return Math.random() > 0.3 ? positive + improvement : positive;
+
                 }
-            }
 
-            elements.answerTextarea.addEventListener('input', () => {
-                elements.submitAnswerBtn.disabled = elements.answerTextarea.value.trim() === '';
-            });
+    
 
-            elements.submitAnswerBtn.addEventListener('click', () => {
-                const answer = elements.answerTextarea.value;
-                elements.userAnswerTranscript.textContent = answer;
-                elements.aiFeedbackText.textContent = "模拟AI反馈：回答得不错，逻辑清晰。可以尝试补充更多数据来支撑你的论点。";
-                elements.practiceAnsweringState.classList.add('hidden');
-                elements.practiceFeedbackState.classList.remove('hidden');
-            });
+                function generateMockSummary() {
 
-            elements.closePracticeBtn.addEventListener('click', () => {
-                showConfirm('提前结束', '您确定要提前结束本次面试吗？系统将根据您已完成的回答生成一份评估报告。', (confirmed) => {
-                    if (confirmed) {
-                        finishInterview(true);
-                    }
-                });
-            });
+                    return getRandomItem(mockFeedback.summaries);
 
-            elements.nextQuestionBtn.addEventListener('click', () => {
-                // Check if feedback for the current question has been shown
-                if (elements.practiceFeedbackState.classList.contains('hidden')) {
-                    showToast('请先提交当前问题的回答。');
-                    return;
                 }
 
-                if (currentQuestionIndex === opportunityData.generatedQA.length - 1) {
-                    finishInterview(false);
-                } else {
-                    currentQuestionIndex++;
-                    displayQuestion(currentQuestionIndex);
-                }
-            });
+    
 
-            elements.reportHistoryList.addEventListener('click', (e) => {
-                const historyItem = e.target.closest('.history-item');
-                if (historyItem) {
-                    const sessionId = parseInt(historyItem.dataset.sessionId, 10);
-                    loadReport(sessionId);
-                }
-            });
+                function downloadResumeAsPDF() {
 
-            elements.showAnswerBtn.addEventListener('click', () => {
-                showAlert('建议答案', opportunityData.generatedQA[currentQuestionIndex].a);
-            });
+                    const resumeContent = elements.resumePreviewArea.innerHTML;
 
-            // --- New JD Analysis Logic ---
-            elements.analyzeJdBtn.addEventListener('click', () => {
-                elements.analyzeJdBtn.disabled = true;
-                elements.analyzeJdBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>AI分析中...';
-                elements.jdAnalysisResults.classList.add('hidden');
+                    const position = opportunityData.position;
 
-                setTimeout(() => {
-                    // Mock Keywords (replace with actual AI output)
-                    const mockKeywords = ['JavaScript', 'React', 'Node.js', '数据结构', '算法', '团队协作', '项目管理'];
-                    elements.keywordsList.innerHTML = mockKeywords.map(kw => `<span class="bg-blue-200 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">${kw}</span>`).join('');
+                    const company = opportunityData.company;
 
-                    // Mock User Profile (replace with actual user data from profile.html)
-                    const mockUserProfile = {
-                        skills: ['JavaScript', 'Java', 'Python', 'Vue.js'],
-                        projects: ['电商平台 (React)', '图书管理系统 (Flask)'],
-                        experience: ['团队协作', '项目管理']
+                    const filename = `${company}_${position}_简历.pdf`;
+
+                    const printElement = document.createElement('div');
+
+                    printElement.style.width = '210mm';
+
+                    printElement.style.minHeight = '297mm';
+
+                    printElement.style.padding = '20mm';
+
+                    printElement.style.fontFamily = `'Helvetica Neue', Helvetica, Arial, sans-serif`;
+
+                    printElement.style.fontSize = '11pt';
+
+                    printElement.style.color = '#333';
+
+                    printElement.innerHTML = resumeContent;
+
+                    const style = document.createElement('style');
+
+                    style.innerHTML = `
+
+                        @media print { body { -webkit-print-color-adjust: exact; } }
+
+                        h1, h2, h3, h4, h5, h6 { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #000; margin-top: 1.2em; margin-bottom: 0.6em; }
+
+                        h1 { font-size: 22pt; border-bottom: 2px solid #333; padding-bottom: 4px; margin-bottom: 0.8em;}
+
+                        h3 { font-size: 14pt; border-bottom: 1px solid #ccc; padding-bottom: 2px; }
+
+                        ul { padding-left: 20px; list-style-position: outside;}
+
+                        p, li { line-height: 1.5; }
+
+                        hr { display: none; }
+
+                    `;
+
+                    printElement.prepend(style);
+
+                    const opt = {
+
+                        margin: 0, filename: filename, image: { type: 'jpeg', quality: 0.98 },
+
+                        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+
+                        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+
                     };
 
-                    let preMatchFeedback = '根据您的个人信息，与该岗位JD匹配度较高。特别是**JavaScript**和**React**经验非常吻合。' +
-                                            '建议在简历中进一步突出您在**Node.js**和**算法**方面的经验，以提高匹配度.';
-                    
-                    elements.preMatchText.textContent = preMatchFeedback;
+                    html2pdf().from(printElement).set(opt).save();
 
-                    elements.jdAnalysisResults.classList.remove('hidden');
-                    elements.analyzeJdBtn.disabled = false;
-                    elements.analyzeJdBtn.innerHTML = '<i class="fas fa-brain mr-2"></i>AI分析JD';
-                }, 2000);
+                }
+
+    
+
+                elements.secondaryTabs.forEach(button => {
+
+                    button.addEventListener('click', () => {
+
+                        elements.secondaryTabs.forEach(btn => btn.classList.remove('active'));
+
+                        button.classList.add('active');
+
+                        elements.tabContents.forEach(content => content.classList.toggle('hidden', content.id !== `tab-${button.dataset.tab}`));
+
+                    });
+
+                });
+
+    
+
+                elements.mainActionResume.addEventListener('click', () => elements.keywordModal.classList.remove('hidden'));
+
+                elements.cancelKeywordBtn.addEventListener('click', () => elements.keywordModal.classList.add('hidden'));
+
+                elements.generateWithKeywordBtn.addEventListener('click', () => {
+
+                    const keywords = elements.resumeKeywordsInput.value;
+
+                    elements.keywordModal.classList.add('hidden');
+
+                    elements.mainActionResume.disabled = true;
+
+                    elements.mainActionResume.querySelector('h2').textContent = 'AI 正在生成中...';
+
+                    setTimeout(() => {
+
+                        const generatedMd = `# 简历 for ${opportunityData.position}\n\n## 重点突出了 ${keywords || 'AI自动判断'} 的方面\n... (这里是AI生成的简历内容) ...`;
+
+                        opportunityData.generatedResume = generatedMd;
+
+                        elements.resumeEditor.value = generatedMd;
+
+                        elements.resumePreviewArea.innerHTML = marked.parse(generatedMd);
+
+                        elements.resumePlaceholder.classList.add('hidden');
+
+                        elements.resumeContentContainer.classList.remove('hidden');
+
+                        elements.resumeDownloadBtn.classList.remove('hidden');
+
+                        elements.resumeEditMode.classList.add('hidden');
+
+                        elements.resumeDisplayMode.classList.remove('hidden');
+
+                                                showToast("简历已生成！请在下方“简历详情”Tab中查看。");
+
+                                                activateTab('resume');
+
+                                                elements.mainActionResume.disabled = false;
+
+                        elements.mainActionResume.querySelector('h2').textContent = 'AI 生成定制简历';
+
+                    }, 1500);
+
+                });
+
+                elements.resumeEditBtn.addEventListener('click', () => {
+
+                    elements.resumeDisplayMode.classList.add('hidden');
+
+                    elements.resumeEditMode.classList.remove('hidden');
+
+                });
+
+                elements.resumeCancelBtn.addEventListener('click', () => {
+
+                    elements.resumeEditor.value = opportunityData.generatedResume;
+
+                    elements.resumeEditMode.classList.add('hidden');
+
+                    elements.resumeDisplayMode.classList.remove('hidden');
+
+                });
+
+                elements.resumeSaveBtn.addEventListener('click', () => {
+
+                    opportunityData.generatedResume = elements.resumeEditor.value;
+
+                    elements.resumePreviewArea.innerHTML = marked.parse(opportunityData.generatedResume);
+
+                    elements.resumeEditMode.classList.add('hidden');
+
+                    elements.resumeDisplayMode.classList.remove('hidden');
+
+                    showToast('简历修改已保存！');
+
+                });
+
+                elements.resumeDownloadBtn.addEventListener('click', downloadResumeAsPDF);
+
+    
+
+                function renderQaList() {
+
+                    if (opportunityData.generatedQA.length === 0) {
+
+                        elements.qaPlaceholder.classList.remove('hidden');
+
+                        elements.qaControls.classList.add('hidden');
+
+                        elements.qaListContainer.innerHTML = '';
+
+                    } else {
+
+                        elements.qaPlaceholder.classList.add('hidden');
+
+                        elements.qaControls.classList.remove('hidden');
+
+                        const qaHtml = opportunityData.generatedQA.map(item => `
+
+                            <div class="qa-item bg-gray-50 p-3 rounded-lg border" data-id="${item.id}">
+
+                                <div class="flex justify-between items-start mb-2">
+
+                                    <textarea rows="1" class="question-input font-semibold border-b-2 w-full focus:border-blue-500 outline-none bg-transparent resize-none p-1">${item.q}</textarea>
+
+                                    <button class="delete-qa-btn text-gray-400 hover:text-red-600 ml-2 flex-shrink-0 p-1"><i class="fas fa-trash-alt"></i></button>
+
+                                </div>
+
+                                <textarea class="answer-input w-full p-2 border rounded-md text-sm" rows="4">${item.a}</textarea>
+
+                            </div>
+
+                        `).join('');
+
+                        elements.qaListContainer.innerHTML = qaHtml;
+
+                    }
+
+                }
+
+                elements.addQaBtn.addEventListener('click', () => {
+
+                    opportunityData.generatedQA.unshift({ id: Date.now(), q: '新问题...', a: '新答案...' });
+
+                    renderQaList();
+
+                });
+
+                elements.saveQaBtn.addEventListener('click', () => {
+
+                    const qaItems = queryElAll('.qa-item');
+
+                    const newQAData = Array.from(qaItems).map(item => ({
+
+                        id: item.dataset.id,
+
+                        q: item.querySelector('.question-input').value,
+
+                        a: item.querySelector('.answer-input').value
+
+                    })).reverse();
+
+                    opportunityData.generatedQA = newQAData;
+
+                    showToast('问答列表已保存！');
+
+                });
+
+                elements.qaListContainer.addEventListener('click', (e) => {
+
+                    const deleteBtn = e.target.closest('.delete-qa-btn');
+
+                    if (deleteBtn) {
+
+                        const idToDelete = deleteBtn.closest('.qa-item').dataset.id;
+
+                        showConfirm('确认删除', '确定要删除这个问题吗？', (confirmed) => {
+
+                            if (confirmed) {
+
+                                opportunityData.generatedQA = opportunityData.generatedQA.filter(item => String(item.id) !== idToDelete);
+
+                                renderQaList();
+
+                                showToast('删除成功');
+
+                            }
+
+                        });
+
+                    }
+
+                });
+
+    
+
+                function renderHistoryList() {
+
+                    if (opportunityData.interviewHistory.length === 0) {
+
+                        elements.reportPlaceholder.classList.remove('hidden');
+
+                        elements.reportContentContainer.classList.add('hidden');
+
+                        return;
+
+                    }
+
+                    elements.reportHistoryList.innerHTML = opportunityData.interviewHistory.map(session => `
+
+                        <div class="history-item flex justify-between items-center bg-gray-50 p-2 rounded-lg text-sm cursor-pointer hover:bg-gray-100" data-session-id="${session.id}">
+
+                            <span><i class="fas fa-history mr-2 text-gray-400"></i>${session.date} 模拟面试</span>
+
+                            <span class="font-semibold text-blue-600">${session.score}分</span>
+
+                        </div>`).join('');
+
+                }
+
+    
+
+                function loadReport(sessionId) {
+
+                    const session = opportunityData.interviewHistory.find(s => s.id === sessionId);
+
+                    if (!session) return;
+
+    
+
+                    elements.reportPlaceholder.classList.add('hidden');
+
+                    elements.reportContentContainer.classList.remove('hidden');
+
+    
+
+                    elements.reportScore.textContent = session.score;
+
+                    elements.reportFeedback.textContent = session.summary;
+
+    
+
+                    elements.reportSessionDetails.innerHTML = session.answeredQuestions.map(qa => `
+
+                        <div class="bg-gray-50 p-3 rounded-lg border">
+
+                            <p class="font-semibold text-gray-800">${qa.q}</p>
+
+                            <p class="text-xs text-gray-500 mt-2">你的回答:</p>
+
+                            <p class="text-sm text-gray-700 p-2 bg-white rounded mt-1">${qa.userAnswer || '用户未回答'}</p>
+
+                            <p class="text-xs text-gray-500 mt-2">AI反馈:</p>
+
+                            <p class="text-sm text-green-700 p-2 bg-green-50 rounded mt-1">${qa.feedback}</p>
+
+                        </div>`).join('');
+
+                    elements.reportSessionDetailsContainer.classList.remove('hidden');
+
+                }
+
+    
+
+                function finishInterview(isInterrupted = false) {
+
+                    elements.practiceOverlay.classList.add('hidden');
+
+                    const questionsInSession = opportunityData.generatedQA.slice(0, currentQuestionIndex + 1);
+
+                    const score = Math.floor(Math.random() * 21) + 75; // Random score 75-95
+
+                    let summary = generateMockSummary();
+
+                    if (isInterrupted) {
+
+                        summary += ` (本次评估基于您已回答的 ${questionsInSession.filter(q => q.userAnswer).length} 个问题生成。)`
+
+                    }
+
+    
+
+                    const newSession = {
+
+                        id: Date.now(),
+
+                        date: new Date().toLocaleDateString('zh-CN'),
+
+                        score: score,
+
+                        summary: summary,
+
+                        answeredQuestions: questionsInSession.filter(qa => qa.userAnswer) // Only include answered questions
+
+                    };
+
+                    opportunityData.interviewHistory.unshift(newSession);
+
+    
+
+                    showToast("面试完成！正在生成评估报告...");
+
+                    setTimeout(() => {
+
+                        renderHistoryList();
+
+                        loadReport(newSession.id);
+
+                        activateTab('report');
+
+                    }, 500);
+
+                }
+
+    
+
+                elements.mainActionPractice.addEventListener('click', () => {
+
+                    elements.practiceInitialBtn.classList.add('hidden');
+
+                    elements.practiceLoadingState.classList.remove('hidden');
+
+                    setTimeout(() => {
+
+                        if (opportunityData.generatedQA.length === 0) {
+
+                            opportunityData.generatedQA = [
+
+                                { id: Date.now()+1, q: '讲一个你参与过的最有挑战性的项目。', a: '可以从项目背景（Situation）、你的任务（Task）、你采取的行动（Action）和最终结果（Result）四个方面来展开描述。' },
+
+                                { id: Date.now()+2, q: '你会如何优化一个React应用的性能？', a: '可以从代码层面（如shouldComponentUpdate, React.memo, useMemo, useCallback），和非代码层面（如代码分割, 懒加载, 资源压缩）等角度来回答。' },
+
+                                { id: Date.now()+3, q: '你对我们公司有什么了解？', a: '可以谈谈对公司产品/业务的理解、企业文化、技术栈等，并表达你的兴趣和匹配度。' }
+
+                            ];
+
+                        }
+
+                                                renderQaList();
+
+                                                activateTab('qa');
+
+                                                elements.practiceLoadingState.classList.add('hidden');
+
+                        elements.practiceConfirmState.classList.remove('hidden');
+
+                    }, 1500);
+
+                });
+
+    
+
+                elements.startPracticeBtn.addEventListener('click', () => {
+
+                    currentQuestionIndex = 0;
+
+                    // Reset previous answers
+
+                    opportunityData.generatedQA.forEach(qa => {
+
+                        delete qa.userAnswer;
+
+                        delete qa.feedback;
+
+                    });
+
+                    displayQuestion(currentQuestionIndex);
+
+                    elements.practiceOverlay.classList.remove('hidden');
+
+                });
+
+    
+
+                function displayQuestion(index) {
+
+                    elements.practiceQuestion.textContent = opportunityData.generatedQA[index].q;
+
+                    elements.questionCounter.textContent = `${index + 1}/${opportunityData.generatedQA.length}`;
+
+                    elements.practiceAnsweringState.classList.remove('hidden');
+
+                    elements.practiceFeedbackState.classList.add('hidden');
+
+                    elements.answerTextarea.value = '';
+
+                    elements.submitAnswerBtn.disabled = true;
+
+                    
+
+                    if (index === opportunityData.generatedQA.length - 1) {
+
+                        elements.nextQuestionBtn.textContent = '完成面试，查看评估';
+
+                        elements.nextQuestionBtn.classList.replace('bg-blue-600', 'bg-green-600');
+
+                    } else {
+
+                        elements.nextQuestionBtn.textContent = '下一题 →';
+
+                        elements.nextQuestionBtn.classList.replace('bg-green-600', 'bg-blue-600');
+
+                    }
+
+                }
+
+    
+
+                elements.answerTextarea.addEventListener('input', () => {
+
+                    elements.submitAnswerBtn.disabled = elements.answerTextarea.value.trim() === '';
+
+                });
+
+    
+
+                elements.submitAnswerBtn.addEventListener('click', () => {
+
+                    const answer = elements.answerTextarea.value;
+
+                    const feedback = generateMockFeedback();
+
+                    
+
+                    // Save answer and feedback
+
+                    const currentQA = opportunityData.generatedQA[currentQuestionIndex];
+
+                    currentQA.userAnswer = answer;
+
+                    currentQA.feedback = feedback;
+
+    
+
+                    elements.userAnswerTranscript.textContent = answer;
+
+                    elements.aiFeedbackText.textContent = feedback;
+
+                    elements.practiceAnsweringState.classList.add('hidden');
+
+                    elements.practiceFeedbackState.classList.remove('hidden');
+
+                });
+
+    
+
+                elements.closePracticeBtn.addEventListener('click', () => {
+
+                    showConfirm('提前结束', '您确定要提前结束本次面试吗？系统将根据您已完成的回答生成一份评估报告。', (confirmed) => {
+
+                        if (confirmed) {
+
+                            finishInterview(true);
+
+                        }
+
+                    });
+
+                });
+
+    
+
+                elements.nextQuestionBtn.addEventListener('click', () => {
+
+                    if (elements.practiceFeedbackState.classList.contains('hidden')) {
+
+                        showToast('请先提交当前问题的回答。');
+
+                        return;
+
+                    }
+
+    
+
+                    if (currentQuestionIndex === opportunityData.generatedQA.length - 1) {
+
+                        finishInterview(false);
+
+                    } else {
+
+                        currentQuestionIndex++;
+
+                        displayQuestion(currentQuestionIndex);
+
+                    }
+
+                });
+
+    
+
+                elements.reportHistoryList.addEventListener('click', (e) => {
+
+                    const historyItem = e.target.closest('.history-item');
+
+                    if (historyItem) {
+
+                        const sessionId = parseInt(historyItem.dataset.sessionId, 10);
+
+                        loadReport(sessionId);
+
+                    }
+
+                });
+
+    
+
+                elements.showAnswerBtn.addEventListener('click', () => {
+
+                    showAlert('建议答案', opportunityData.generatedQA[currentQuestionIndex].a);
+
+                });
+
+    
+
+                elements.analyzeJdBtn.addEventListener('click', () => {
+
+                    elements.analyzeJdBtn.disabled = true;
+
+                    elements.analyzeJdBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>AI分析中...';
+
+                    elements.jdAnalysisResults.classList.add('hidden');
+
+    
+
+                    setTimeout(() => {
+
+                        const mockKeywords = ['JavaScript', 'React', 'Node.js', '数据结构', '算法', '团队协作', '项目管理'];
+
+                        elements.keywordsList.innerHTML = mockKeywords.map(kw => `<span class="bg-blue-200 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">${kw}</span>`).join('');
+
+                        const mockUserProfile = {
+
+                            skills: ['JavaScript', 'Java', 'Python', 'Vue.js'],
+
+                            projects: ['电商平台 (React)', '图书管理系统 (Flask)'],
+
+                            experience: ['团队协作', '项目管理']
+
+                        };
+
+                        let preMatchFeedback = '根据您的个人信息，与该岗位JD匹配度较高。特别是**JavaScript**和**React**经验非常吻合。' +
+
+                                                '建议在简历中进一步突出您在**Node.js**和**算法**方面的经验，以提高匹配度.';
+
+                        elements.preMatchText.textContent = preMatchFeedback;
+
+                        elements.jdAnalysisResults.classList.remove('hidden');
+
+                        elements.analyzeJdBtn.disabled = false;
+
+                        elements.analyzeJdBtn.innerHTML = '<i class="fas fa-brain mr-2"></i>AI分析JD';
+
+                    }, 2000);
+
+                });
+
             });
-        });
-    </script>
+
+        </script>
 </body>
 </html>
