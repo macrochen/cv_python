@@ -63,15 +63,147 @@
         </div>
     </div>
 
+    <!-- Global Toast -->
+    <div id="global-toast" class="hidden opacity-0 transition-opacity duration-300 fixed top-16 left-1/2 -translate-x-1/2 bg-black bg-opacity-70 text-white py-2 px-5 rounded-full shadow-lg z-50">
+        <p id="global-toast-message"></p>
+    </div>
+
+    <!-- Global Confirm Modal -->
+    <div id="global-confirm-modal" class="hidden opacity-0 transition-opacity duration-300 fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-sm mx-auto p-6 text-center">
+            <h3 id="global-confirm-title" class="text-lg font-semibold text-gray-900 mb-2"></h3>
+            <p id="global-confirm-text" class="text-sm text-gray-600 mb-6"></p>
+            <div class="flex justify-center space-x-4">
+                <button id="global-confirm-cancel-btn" class="w-1/2 bg-gray-200 text-gray-800 font-bold py-2.5 rounded-lg hover:bg-gray-300">取消</button>
+                <button id="global-confirm-btn" class="w-1/2 bg-red-500 text-white font-bold py-2.5 rounded-lg hover:bg-red-600">确认</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Alert Modal -->
+    <div id="global-alert-modal" class="hidden opacity-0 transition-opacity duration-300 fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-sm mx-auto p-6">
+            <h3 id="global-alert-title" class="text-lg font-semibold text-gray-900 mb-2 text-center"></h3>
+            <p id="global-alert-text" class="text-sm text-gray-600 mb-6 whitespace-pre-wrap text-left"></p>
+            <div class="flex justify-center">
+                <button id="global-alert-ok-btn" class="w-full bg-blue-500 text-white font-bold py-2.5 rounded-lg hover:bg-blue-600">好的</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const tabs = document.querySelectorAll('.tab-item');
             const contentFrame = document.getElementById('content-frame');
 
+            // --- Dialog Implementation ---
+            function showToast(message, duration = 2000) {
+                const toast = document.getElementById('global-toast');
+                const toastMessage = document.getElementById('global-toast-message');
+                if (!toast || !toastMessage) return;
+
+                toastMessage.textContent = message;
+                toast.classList.remove('hidden', 'opacity-0');
+                toast.classList.add('opacity-100');
+
+                setTimeout(() => {
+                    toast.classList.remove('opacity-100');
+                    toast.classList.add('opacity-0');
+                    setTimeout(() => {
+                        toast.classList.add('hidden');
+                    }, 300);
+                }, duration);
+            }
+
+            function showAlert(title, text) {
+                const alertModal = document.getElementById('global-alert-modal');
+                const alertTitle = document.getElementById('global-alert-title');
+                const alertText = document.getElementById('global-alert-text');
+                const okBtn = document.getElementById('global-alert-ok-btn');
+                if (!alertModal) return;
+
+                alertTitle.textContent = title;
+                alertText.textContent = text;
+
+                alertModal.classList.remove('hidden');
+                setTimeout(() => alertModal.classList.remove('opacity-0'), 10);
+
+                const hide = () => {
+                    alertModal.classList.add('opacity-0');
+                    setTimeout(() => alertModal.classList.add('hidden'), 300);
+                };
+                
+                const newOkBtn = okBtn.cloneNode(true);
+                okBtn.parentNode.replaceChild(newOkBtn, okBtn);
+                newOkBtn.onclick = hide;
+            }
+
+            function showConfirm(title, text, confirmCallback) {
+                const confirmModal = document.getElementById('global-confirm-modal');
+                const confirmTitle = document.getElementById('global-confirm-title');
+                const confirmText = document.getElementById('global-confirm-text');
+                const confirmBtn = document.getElementById('global-confirm-btn');
+                const cancelBtn = document.getElementById('global-confirm-cancel-btn');
+                if (!confirmModal) return;
+
+                confirmTitle.textContent = title;
+                confirmText.textContent = text;
+
+                confirmModal.classList.remove('hidden');
+                setTimeout(() => confirmModal.classList.remove('opacity-0'), 10);
+
+                const hide = () => {
+                    confirmModal.classList.add('opacity-0');
+                    setTimeout(() => confirmModal.classList.add('hidden'), 300);
+                };
+
+                const newConfirmBtn = confirmBtn.cloneNode(true);
+                confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+                newConfirmBtn.onclick = () => {
+                    hide();
+                    if (confirmCallback) confirmCallback(true);
+                };
+
+                const newCancelBtn = cancelBtn.cloneNode(true);
+                cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+                newCancelBtn.onclick = () => {
+                    hide();
+                    if (confirmCallback) confirmCallback(false);
+                };
+            }
+
+            // --- Message Listener ---
+            window.addEventListener('message', (event) => {
+                // In a real app, you would check event.origin for security.
+                const { type, payload } = event.data;
+                const sourceIframe = contentFrame.contentWindow;
+
+                switch (type) {
+                    case 'showToast':
+                        showToast(payload.message);
+                        break;
+                    case 'showAlert':
+                        showAlert(payload.title, payload.text);
+                        break;
+                    case 'showConfirm':
+                        showConfirm(payload.title, payload.text, (result) => {
+                            // Send the result back to the iframe that requested it
+                            sourceIframe.postMessage({
+                                type: 'confirmResult',
+                                result: result,
+                                id: payload.id
+                            }, '*'); // Use a specific origin in production
+                        });
+                        break;
+                }
+            });
+
+            // --- Navigation Logic ---
+            let currentPage = 'dashboard.html';
+
             const updateActiveTab = (pageName) => {
                 tabs.forEach(tab => {
-                    const cleanPageName = pageName || 'dashboard.html';
-                    if (tab.dataset.page === cleanPageName) {
+                    if (tab.dataset.page === pageName) {
                         tab.classList.add('active');
                     } else {
                         tab.classList.remove('active');
@@ -83,27 +215,13 @@
                 tab.addEventListener('click', (e) => {
                     const tabToActivate = e.currentTarget;
                     const newUrl = tabToActivate.dataset.page;
-                    try {
-                        const currentPageName = contentFrame.contentWindow.location.pathname.split('/').pop();
-                        if (newUrl && newUrl !== currentPageName) {
-                            contentFrame.src = newUrl;
-                        }
-                    } catch (e) {
-                        contentFrame.src = newUrl;
-                        console.error("Error accessing iframe location, falling back to basic navigation.", e);
-                    }
-                    tabs.forEach(t => t.classList.remove('active'));
-                    tabToActivate.classList.add('active');
-                });
-            });
 
-            contentFrame.addEventListener('load', () => {
-                try {
-                    const loadedPageName = contentFrame.contentWindow.location.pathname.split('/').pop();
-                    updateActiveTab(loadedPageName);
-                } catch (e) {
-                    console.error("Could not access iframe content.", e);
-                }
+                    if (newUrl && newUrl !== currentPage) {
+                        contentFrame.src = newUrl;
+                        currentPage = newUrl;
+                        updateActiveTab(newUrl);
+                    }
+                });
             });
         });
     </script>

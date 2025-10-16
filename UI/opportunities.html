@@ -88,6 +88,7 @@
         </div>
     </div>
 
+    <script src="dialog.js"></script>
     <script>
         const opportunityList = document.getElementById('opportunity-list');
         const popup = document.getElementById('opportunity-popup');
@@ -196,7 +197,7 @@
                 latest_progress: document.getElementById('latest-progress').value,
             };
 
-            if (!oppData.company || !oppData.position) { alert('公司和职位名称为必填项！'); return; }
+            if (!oppData.company || !oppData.position) { showToast('公司和职位名称为必填项！'); return; }
 
             if (id) { // Editing
                 const index = allOpportunities.findIndex(o => o.id === id);
@@ -259,10 +260,13 @@
             const id = e.target.closest('.swipe-container')?.dataset.id;
             if (!id) return;
             if (e.target.classList.contains('delete-btn')) {
-                if (confirm('确定要删除这个机会吗？')) {
-                    allOpportunities = allOpportunities.filter(o => o.id !== id);
-                    applyFilters();
-                }
+                showConfirm('确认删除', '确定要删除这个机会吗？', (confirmed) => {
+                    if (confirmed) {
+                        allOpportunities = allOpportunities.filter(o => o.id !== id);
+                        applyFilters();
+                        showToast('删除成功');
+                    }
+                });
             }
             if (e.target.classList.contains('edit-btn')) {
                 const opp = allOpportunities.find(o => o.id === id);

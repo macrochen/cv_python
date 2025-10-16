@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="dialog.js"></script>
     <style>
         body { background-color: #f8f9fa; }
         .prose h1, .prose h2, .prose h3 { font-weight: bold; margin-top: 1em; margin-bottom: 0.5em; }
@@ -314,7 +315,7 @@
             elements.jd.textContent = opportunityData.jd;
 
             // --- 4. LOGIC & EVENT HANDLERS ---
-            const showToast = (message) => alert(message);
+
             const activateTab = (tabName) => queryEl(`.secondary-tab[data-tab='${tabName}']`)?.click();
 
             function downloadResumeAsPDF() {
@@ -457,10 +458,13 @@
                 const deleteBtn = e.target.closest('.delete-qa-btn');
                 if (deleteBtn) {
                     const idToDelete = deleteBtn.closest('.qa-item').dataset.id;
-                    if (confirm('确定要删除这个问题吗？')) {
-                        opportunityData.generatedQA = opportunityData.generatedQA.filter(item => String(item.id) !== idToDelete);
-                        renderQaList();
-                    }
+                    showConfirm('确认删除', '确定要删除这个问题吗？', (confirmed) => {
+                        if (confirmed) {
+                            opportunityData.generatedQA = opportunityData.generatedQA.filter(item => String(item.id) !== idToDelete);
+                            renderQaList();
+                            showToast('删除成功');
+                        }
+                    });
                 }
             });
 
@@ -584,15 +588,17 @@
             });
 
             elements.closePracticeBtn.addEventListener('click', () => {
-                if (confirm("您确定要提前结束本次面试吗？系统将根据您已完成的回答生成一份评估报告。")) {
-                    finishInterview(true);
-                }
+                showConfirm('提前结束', '您确定要提前结束本次面试吗？系统将根据您已完成的回答生成一份评估报告。', (confirmed) => {
+                    if (confirmed) {
+                        finishInterview(true);
+                    }
+                });
             });
 
             elements.nextQuestionBtn.addEventListener('click', () => {
                 // Check if feedback for the current question has been shown
                 if (elements.practiceFeedbackState.classList.contains('hidden')) {
-                    alert('请先提交当前问题的回答。');
+                    showToast('请先提交当前问题的回答。');
                     return;
                 }
 
@@ -613,7 +619,7 @@
             });
 
             elements.showAnswerBtn.addEventListener('click', () => {
-                alert("建议答案：\n" + opportunityData.generatedQA[currentQuestionIndex].a);
+                showAlert('建议答案', opportunityData.generatedQA[currentQuestionIndex].a);
             });
 
             // --- New JD Analysis Logic ---
